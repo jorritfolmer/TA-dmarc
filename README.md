@@ -28,6 +28,11 @@ The following table lists support for distributed deployment roles in a Splunk d
 
 ## Configure inputs for TA-dmarc
 
+### Directory based
+
+TA-dmarc can watch a folder where you drop DMARC aggregate reports manually or otherwise.
+It will process files with .xml, .zip or .xml.gz extension, ingest them into Splunk, and move them to the done/ directory after succesful processing. Any invalid .xml, .zip or .xml.gz files are moved to the bad/ directory.
+
 1. Go to the add-on's configuration UI and configure a new modular input by clicking on the "Inputs" menu.
 2. Click create new input
 3. Configure:
