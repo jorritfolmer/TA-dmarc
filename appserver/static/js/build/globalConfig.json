@@ -317,7 +317,15 @@
                             "type": "checkbox", 
                             "field": "use_ssl", 
                             "defaultValue": true, 
-                            "help": "Use SSL and 993/tcp", 
+                            "help": "", 
+                            "required": false
+                        }, 
+                        {
+                            "label": "Resolve IP", 
+                            "type": "checkbox", 
+                            "field": "resolve_ip", 
+                            "defaultValue": true, 
+                            "help": "Resolve the source_ip field in the DMARC aggregate reports.", 
                             "required": false
                         }
                     ], 

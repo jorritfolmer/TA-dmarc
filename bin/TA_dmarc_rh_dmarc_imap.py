@@ -57,6 +57,13 @@ fields = [
         default=True,
         validator=None
     ), 
+    field.RestField(
+        'resolve_ip',
+        required=False,
+        encrypted=False,
+        default=True,
+        validator=None
+    ), 
 
     field.RestField(
         'disabled',

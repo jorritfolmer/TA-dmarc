@@ -55,7 +55,11 @@ class ModInputdmarc_imap(modinput_wrapper.base_modinput.BaseModInput):
                                          required_on_create=True,
                                          required_on_edit=False))
         scheme.add_argument(smi.Argument("use_ssl", title="Use SSL",
-                                         description="Use SSL and 993/tcp",
+                                         description="",
+                                         required_on_create=False,
+                                         required_on_edit=False))
+        scheme.add_argument(smi.Argument("resolve_ip", title="Resolve IP",
+                                         description="Resolve the source_ip field in the DMARC aggregate reports.",
                                          required_on_create=False,
                                          required_on_edit=False))
         return scheme
@@ -79,6 +83,7 @@ class ModInputdmarc_imap(modinput_wrapper.base_modinput.BaseModInput):
     def get_checkbox_fields(self):
         checkbox_fields = []
         checkbox_fields.append("use_ssl")
+        checkbox_fields.append("resolve_ip")
         return checkbox_fields
 
     def get_global_checkbox_fields(self):

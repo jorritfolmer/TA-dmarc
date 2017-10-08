@@ -10,10 +10,6 @@ import shutil
 import errno
 from collections import OrderedDict
 
-# #################################################################
-# Class for processing DMARC RUA files in .xml, .xml.zip or .xml.gz
-# #################################################################
-
 # Copyright 2017 Jorrit Folmer
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -34,7 +30,14 @@ from collections import OrderedDict
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-class Dmarc:
+
+class Dir2Splunk:
+    """ This class:
+        - parses DMARC aggregate report files in .xml, .xml.zip or .xml.gz
+        - from a given directory
+        - and writes them to Splunk as events
+        - in key="value" format.
+    """
 
     # Class variables:
     tmp_dir         = "tmp"
@@ -116,7 +119,7 @@ class Dmarc:
             if field != None:
                 meta += "%s=\"%s\",\n" % (mapping_meta[key], field)
         records = xmldata.findall("record")
-        self.helper.log_info("    - report_id %s has %d records" % (xmldata.findtext("report_metadata/report_id", default=""), len(records)))
+        self.helper.log_debug("    - report_id %s has %d records" % (xmldata.findtext("report_metadata/report_id", default=""), len(records)))
         result = []
         for record in records:
             data = ''
@@ -142,7 +145,7 @@ class Dmarc:
         try:
             zf = zipfile.ZipFile(file, 'r')
         except Exception, e:
-            self.helper.log_info("    - moving bad zip file %s to bad_dir due to %s" % (file, e))
+            self.helper.log_warning("    - moving bad zip file %s to bad_dir due to %s" % (file, e))
             dest = os.path.join(self.dir,self.bad_dir,os.path.basename(file))
             try:
                 shutil.move(file,dest)
@@ -150,9 +153,9 @@ class Dmarc:
                 self.helper.log_error("    - error moving %s to bad_dir with exception %s" % (file, e))
             return members
         else:
-            self.helper.log_info("    - extracting zip file %s" % file)
+            self.helper.log_debug("    - extracting zip file %s" % file)
             for member in zf.infolist():
-                self.helper.log_info("    - contains %s of size %d (zip file %s)" % (member.filename, member.file_size, file))
+                self.helper.log_debug("    - contains %s of size %d (zip file %s)" % (member.filename, member.file_size, file))
                 # Protect against ZIP bombs we only include members smaller than 100MB:
                 if member.file_size < self.max_size:
                     zf.extract(member.filename,os.path.join(self.dir,self.tmp_dir))
@@ -163,7 +166,7 @@ class Dmarc:
             zf.close()
             # Prepare to move zipfile to donedir
             dest = os.path.join(self.dir,self.done_dir,os.path.basename(file))
-            self.helper.log_info("    - moving %s to %s" % (file,dest))
+            self.helper.log_debug("    - moving %s to %s" % (file,dest))
             try:
                 shutil.move(file,dest)
             except Exception, e:
@@ -175,14 +178,14 @@ class Dmarc:
         """ Decompress a gz file, write to temp, move to done_dir, and return a list of the extracted member """
         members = []
         with open(file, 'rb') as f:
-            self.helper.log_info("    - extracting gz file %s" % file)
+            self.helper.log_debug("    - extracting gz file %s" % file)
             data = f.read()
             zobj = zlib.decompressobj(zlib.MAX_WBITS|32)
             try:
                 # Protect against gzip bombs by limiting decompression to max_size
                 unz  = zobj.decompress(data, self.max_size)
             except Exception,e:
-                self.helper.log_info("    - moving bad gz file %s to bad_dir because of %s" % (file,e))
+                self.helper.log_warning("    - moving bad gz file %s to bad_dir because of %s" % (file,e))
                 dest = os.path.join(self.dir,self.bad_dir,os.path.basename(file))
                 try:
                     shutil.move(file,dest)
@@ -198,13 +201,13 @@ class Dmarc:
                     del data
                     member = os.path.join(self.dir,self.tmp_dir,os.path.basename(os.path.splitext(file)[0]))
                     with open(member,"w") as m:
-                        self.helper.log_info("   - writing to %s" % member)
+                        self.helper.log_debug("   - writing to %s" % member)
                         m.write(unz)
                         m.close
                         del unz
                         # Prepare to move gz file to done_dir
                         dest = os.path.join(self.dir,self.done_dir,os.path.basename(file))
-                        self.helper.log_info("    - moving %s to %s" % (file,dest))
+                        self.helper.log_debug("    - moving %s to %s" % (file,dest))
                         try:
                             shutil.move(file,dest)
                         except Exception, e:
@@ -220,7 +223,7 @@ class Dmarc:
         """
         events = []
         with open(file, 'r') as f:
-            self.helper.log_info("    - start parsing xml file %s with do_resolve=%s" % (file, self.do_resolve))
+            self.helper.log_debug("    - start parsing xml file %s with do_resolve=%s" % (file, self.do_resolve))
             try:
                 # To protect against various XML threats we use the parse function from defusedxml.ElementTree
                 xmldata = parse(f)
@@ -233,7 +236,7 @@ class Dmarc:
                 lines = self.rua2kv(xmldata)
                 del xmldata
                 dest = os.path.join(self.dir,self.done_dir,os.path.basename(file))
-                self.helper.log_info("    - moving %s to %s" % (file,dest))
+                self.helper.log_debug("    - moving %s to %s" % (file,dest))
                 if keep:
                     try:
                         shutil.move(file,dest)
@@ -241,7 +244,7 @@ class Dmarc:
                         self.helper.log_error("    - error moving %s to done_dir with exception %s" % (file, e))
                 else:
                     try:
-                        self.helper.log_info("    - deleting %s" % file)
+                        self.helper.log_debug("    - deleting %s" % file)
                         os.remove(file)
                     except Exception, e:
                         self.helper.log_error("    - error deleting file %s from tmp_dir with exception %s" % (file, e))
@@ -321,6 +324,6 @@ class Dmarc:
                 lines = self.process_xmlfile_to_lines(file,1)
                 self.write_event(lines)
             else:
-                self.helper.log_info("Ignoring file %s" % file)
+                self.helper.log_debug("Ignoring file %s" % file)
         self.helper.log_info("Ended processing incoming directory %s" % self.dir)
 

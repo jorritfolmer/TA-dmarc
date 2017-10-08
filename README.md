@@ -1,6 +1,6 @@
 # TA-dmarc add-on for Splunk
 
-Add-on for ingesting DMARC aggregate reports into Splunk
+Add-on for ingesting DMARC aggregate reports into Splunk from an IMAP account or local directory, with mitigations against XML, GZ and ZIP-bombs
 
 ## Install the TA-dmarc add-on for Splunk
 
@@ -28,21 +28,44 @@ The following table lists support for distributed deployment roles in a Splunk d
 
 ## Configure inputs for TA-dmarc
 
-### Directory based
+### Directory input
 
 TA-dmarc can watch a folder where you drop DMARC aggregate reports manually or otherwise.
 It will process files with .xml, .zip or .xml.gz extension, ingest them into Splunk, and move them to the done/ directory after succesful processing. Any invalid .xml, .zip or .xml.gz files are moved to the bad/ directory.
 
 1. Go to the add-on's configuration UI and configure a new modular input by clicking on the "Inputs" menu.
-2. Click create new input
+2. Click "Create new input"
+2. Select "DMARC directory"
 3. Configure:
-   * Name: e.g. "dmarc-inbox"
+   * Name: e.g. "production_dmarc_indir"
    * Interval: how often to poll the directory where DMARC XML aggregate reports are dropped (see below)
    * Index: what Splunk index to send the aggregate reports to
    * Directory: Location where DMARC aggregate report files are dropped
    * Quiet time: Ignore files that have a modification time of less than n seconds ago. You can use this to prevent ingesting large files that are dropped on a share but take some time to transfer
-   * Resolve IP: Whether to resolve the row source_ip in the DMARC XML aggregate reports
+   * Resolve IP: Whether or not to resolve the row source_ip in the DMARC XML aggregate reports
 4. Click add
+
+### IMAP input
+
+TA-dmarc can also fetch DMARC aggregate report attachments from mails on an IMAP server. It will process attachments in .zip or .gz format and ingest them into Splunk.
+
+TA-dmarc will leave mail untouched: it uses internal checkpointing to skip mails that have already been ingested into Splunk.
+
+1. Go to the add-on's configuration UI and configure an account to authenticate with:
+   * Account Name: descriptive account name, e.g. google_dmarc_mailbox
+   * Username: the account to identify with
+   * Password: the password to authenticate with
+2. Next, go to the add-on's configuration UI and configure a new modular input by clicking on the "Inputs" menu.
+2. Click "Create new input"
+3. Select "DMARC mailbox"
+4. Configure:
+   * Name: e.g. dmarc-google
+   * Interval: how often to poll the mailserver for aggregate reports.
+   * Index: what Splunk index to send the aggregate reports to
+   * Global Account: select the account to authenticate with
+   * IMAP server: the imap server to poll
+   * Use SSL: whether or not to use an encrypted connection
+   * Resolve IP: Whether or not to resolve the row source_ip in the DMARC XML aggregate reports
 
 ## DMARC aggregate reports
 
@@ -56,7 +79,7 @@ Mitigations are in place against:
 
 * ZIP bombs
 * gzip bombs
-* various XML attack vectors like billion laughs, quadratic blowup, external entity expansion and so on thanks to the defusedxml library
+* various XML attack vectors like billion laughs, quadratic blowup, external entity expansion and so on
 
 ### Field mapping
 
@@ -95,7 +118,7 @@ Besides the fields contained in the report, additional fields are mapped from th
 | dest         | google.com            |
 | signature    | Use of mail-from domain myfirstdomain.tld |
 | signature_id | 13190401177475355109  |
-| src          | 256.32.191.194 |
+| src          | resolved.name.if.available.tld |
 | src_ip       | 256.32.191.194 |
 | eventtype    | dmarc_rua_spf_only |
 | tag          | authentication, insecure|
@@ -153,5 +176,10 @@ Besides the fields contained in the report, additional fields are mapped from th
 The following software components are used in this add-on:
 
 1. [defusedxml](https://pypi.python.org/pypi/defusedxml/0.5.0) by Christian Heimes
+2. [IMAPClient](https://github.com/mjs/imapclient) by Menno Finlay-Smits
 2. [Splunk Add-on Builder](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Overview) by Splunk and the [third-party software](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Thirdpartysoftwarecredits) it uses
+
+## Support
+
+This is an open source project without warranty of any kind. No support is provided. However, a public repository and issue tracker are available at https://github.com/jorritfolmer/TA-dmarc
 

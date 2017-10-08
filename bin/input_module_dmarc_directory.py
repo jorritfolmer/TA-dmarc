@@ -5,7 +5,7 @@ import os
 import sys
 import time
 import datetime
-from Dmarc import Dmarc
+import dmarc.dir2splunk as Dir2Splunk
 
 '''
     IMPORTANT
@@ -44,7 +44,7 @@ def collect_events(helper, ew):
     loglevel   = helper.get_log_level()
     helper.set_log_level(loglevel)
 
-    dmarc = Dmarc(ew, helper, opt_dmarc_directory, opt_quiet_time, opt_resolve_ip)
-    if dmarc.init_dirs():
-        dmarc.process_incoming()
+    d2s = Dir2Splunk(ew, helper, opt_dmarc_directory, opt_quiet_time, opt_resolve_ip)
+    if d2s.init_dirs():
+        d2s.process_incoming()
 
