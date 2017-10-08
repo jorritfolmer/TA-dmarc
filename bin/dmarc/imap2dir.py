@@ -63,20 +63,21 @@ class Imap2Dir:
         """ Connect to imap server and return a list of msg uids that match the subject 'Report domain:' """
         context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
         context.verify_mode = ssl.CERT_NONE
+        messages = []
         try:
             if self.opt_use_ssl:
                 self.server=IMAPClient(self.opt_imap_server, use_uid=True,ssl=True, ssl_context=context)
             else:
                 self.server=IMAPClient(self.opt_imap_server, use_uid=True,ssl=False)
-        except:
-            self.helper.log_error('Error connecting to %s with exception %s' % (self.opt_imap_server, str(e)))
+        except Exception, e:
+            raise Exception("Error connecting to %s with exception %s" % (self.opt_imap_server, str(e)))
         else:
             self.helper.log_info('Successfully connected to %s' % self.opt_imap_server)
             self.server.login(self.opt_global_account["username"], self.opt_global_account["password"])
             select_info = self.server.select_folder('INBOX')
             messages = self.server.search('SUBJECT "Report domain:"')
             self.helper.log_info('%d messages match subject "Report domain:"' % len(messages))
-            return messages
+        return messages
 
 
     def get_dmarc_message_bodies(self, messages):
@@ -102,8 +103,7 @@ class Imap2Dir:
         try:
             self.tmpdir = tempfile.mkdtemp()
         except Exception, e:
-            self.helper.log_error("Exception creating temporary directory %s: %s" % (self.tmpdir, str(e)))
-            return False
+            raise Exception("Exception creating temporary directory %s: %s" % (self.tmpdir, str(e)))
         else:
             self.helper.log_debug("Success creating temporary directory %s" % (self.tmpdir))
             return True;
@@ -114,8 +114,7 @@ class Imap2Dir:
             try:
                 shutil.rmtree(self.tmpdir)
             except Exception, e:
-                self.helper.log_error("Exception deleting temporary directory %s: %s" % (self.tmpdir, str(e)))
-                return False
+                raise Exception("Exception deleting temporary directory %s: %s" % (self.tmpdir, str(e)))
             else:
                 self.helper.log_debug("Success deleting temporary directory %s" % (self.tmpdir))
                 return True
@@ -139,7 +138,7 @@ class Imap2Dir:
                         self.add_seen_uid(uid)
                         filelist.append(filename)
                     else:
-                        self.helper.log_debug('    - skipping msg uid %d with content-type %s' % (uid, ctype))
+                        self.helper.log_debug('    - skipping content-type %s of msg uid %d' % (ctype, uid))
             self.helper.save_check_point("seen_uids", pickle.dumps(self.seen_uids))
         return filelist
 

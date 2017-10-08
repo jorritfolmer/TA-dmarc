@@ -150,7 +150,7 @@ class Dir2Splunk:
             try:
                 shutil.move(file,dest)
             except Exception, e:
-                self.helper.log_error("    - error moving %s to bad_dir with exception %s" % (file, e))
+                raise Exception("    - error moving %s to bad_dir with exception %s" % (file, e))
             return members
         else:
             self.helper.log_debug("    - extracting zip file %s" % file)
@@ -170,7 +170,7 @@ class Dir2Splunk:
             try:
                 shutil.move(file,dest)
             except Exception, e:
-                self.helper.log_error("    - error moving %s to done_dir with exception %s" % (file, e))
+                raise Exception("    - error moving %s to done_dir with exception %s" % (file, e))
             return members
 
 
@@ -190,7 +190,7 @@ class Dir2Splunk:
                 try:
                     shutil.move(file,dest)
                 except Exception, e:
-                    self.helper.log_error("    - error moving %s to bad_dir with exception %s" % (file, e))
+                    raise Exception("    - error moving %s to bad_dir with exception %s" % (file, e))
             else:
                 if zobj.unconsumed_tail:
                     del data
@@ -211,27 +211,25 @@ class Dir2Splunk:
                         try:
                             shutil.move(file,dest)
                         except Exception, e:
-                            self.helper.log_error("    - error moving %s to done_dir with exception %s" % (file, e))
+                            raise Exception("    - error moving %s to done_dir with exception %s" % (file, e))
                         m.close
                         members.append(member)
         return members
 
     def process_xmlfile_to_lines(self, file, keep):
-        """ Processes an XML from from a given directory to Splunk events,
+        """ Processes an XML from from a given directory,
             move it to the done_dir,
             and return a list of lines in kv format
         """
-        events = []
+        lines = []
         with open(file, 'r') as f:
             self.helper.log_debug("    - start parsing xml file %s with do_resolve=%s" % (file, self.do_resolve))
             try:
                 # To protect against various XML threats we use the parse function from defusedxml.ElementTree
                 xmldata = parse(f)
             except Exception, e:
-                raise Exception("    - error in file %s with exception: %s" % (file,e))
+                 self.helper.log_warning("    - XML parse error in file %s with exception %s" % (file, e))
             else:
-                #for line in self.rua2kv(xmldata):
-                #    events.append(line) 
                 f.close
                 lines = self.rua2kv(xmldata)
                 del xmldata
@@ -241,14 +239,14 @@ class Dir2Splunk:
                     try:
                         shutil.move(file,dest)
                     except Exception, e:
-                        self.helper.log_error("    - error moving %s to done_dir with exception %s" % (file, e))
+                        raise Exception("    - error moving %s to done_dir with exception %s" % (file, e))
                 else:
                     try:
                         self.helper.log_debug("    - deleting %s" % file)
                         os.remove(file)
                     except Exception, e:
-                        self.helper.log_error("    - error deleting file %s from tmp_dir with exception %s" % (file, e))
-            return lines
+                        raise Exception("    - error deleting file %s from tmp_dir with exception %s" % (file, e))
+        return lines
 
 
     def check_dir(self):
@@ -258,7 +256,6 @@ class Dir2Splunk:
             list = os.listdir(self.dir)
         except Exception as e:
             raise Exception("Error: directory %s not readable with exception %s" % (self.dir, e))
-            return False
         else:
             if os.access(self.dir, os.W_OK):
                 return True

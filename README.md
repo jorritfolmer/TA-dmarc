@@ -1,6 +1,17 @@
 # TA-dmarc add-on for Splunk
 
-Add-on for ingesting DMARC aggregate reports into Splunk from an IMAP account or local directory, with mitigations against XML, GZ and ZIP-bombs
+Add-on for ingesting DMARC XML aggregate reports into Splunk from an IMAP account or local directory, with mitigations against XML, GZ and ZIP-bombs. 
+
+## Supported versions and platforms
+
+This add-on requires a Splunk heavy forwarder running:
+
+| Splunk version | Linux | Windows
+|----------------|-------|---------
+| 6.4            |       | No
+| 6.5            |       |
+| 6.6            | Yes   | Yes
+| 7.0            |       |
 
 ## Install the TA-dmarc add-on for Splunk
 
