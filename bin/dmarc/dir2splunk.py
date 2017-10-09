@@ -10,6 +10,7 @@ import shutil
 import errno
 from collections import OrderedDict
 
+
 # Copyright 2017 Jorrit Folmer
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -17,10 +18,10 @@ from collections import OrderedDict
 # in the Software without restriction, including without limitation the rights to
 # use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
 # of the Software, and to permit persons to whom the Software is furnished to do
-# so, subject to the following conditions: #
+# so, subject to the following conditions:
 
 # The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.  #
+# all copies or substantial portions of the Software.
 
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -129,11 +130,13 @@ class Dir2Splunk:
                     data += "%s=\"%s\",\n" % (mapping_record[key], field)
                 if key == "row/source_ip" and self.do_resolve:
                     try:
+                        self.helper.log_debug("    - resolving %s" % field) 
                         resolve = socket.gethostbyaddr(field)
                         data += "src=\"%s\",\n" % resolve[0]
                     except Exception:
-                        pass
+                        self.helper.log_debug("    - failed to resolve %s" % field) 
             result.append("RUA BEGIN\n" + meta + data)
+        self.helper.log_debug("    - report_id %s finished parsing" % xmldata.findtext("report_metadata/report_id", default="")) 
         return result
 
     def process_zipfile(self, file):
@@ -180,6 +183,7 @@ class Dir2Splunk:
         with open(file, 'rb') as f:
             self.helper.log_debug("    - extracting gz file %s" % file)
             data = f.read()
+            f.close()
             zobj = zlib.decompressobj(zlib.MAX_WBITS|32)
             try:
                 # Protect against gzip bombs by limiting decompression to max_size
@@ -199,11 +203,12 @@ class Dir2Splunk:
                     self.helper.log_warning("   - decompression exceeded limit")
                 else:
                     del data
+                    del zobj
                     member = os.path.join(self.dir,self.tmp_dir,os.path.basename(os.path.splitext(file)[0]))
                     with open(member,"w") as m:
                         self.helper.log_debug("   - writing to %s" % member)
                         m.write(unz)
-                        m.close
+                        m.close()
                         del unz
                         # Prepare to move gz file to done_dir
                         dest = os.path.join(self.dir,self.done_dir,os.path.basename(file))
@@ -212,7 +217,7 @@ class Dir2Splunk:
                             shutil.move(file,dest)
                         except Exception, e:
                             raise Exception("    - error moving %s to done_dir with exception %s" % (file, e))
-                        m.close
+                        m.close()
                         members.append(member)
         return members
 
@@ -230,7 +235,7 @@ class Dir2Splunk:
             except Exception, e:
                  self.helper.log_warning("    - XML parse error in file %s with exception %s" % (file, e))
             else:
-                f.close
+                f.close()
                 lines = self.rua2kv(xmldata)
                 del xmldata
                 dest = os.path.join(self.dir,self.done_dir,os.path.basename(file))
@@ -260,8 +265,7 @@ class Dir2Splunk:
             if os.access(self.dir, os.W_OK):
                 return True
             else:
-                self.helper.log_error("Directory %s not writable" % self.dir)
-                return False
+                raise Exception("Error: directory %s not writable with exception %s" % (self.dir, e))
 
 
     def make_dir(self,dir):

@@ -20,7 +20,15 @@ from dmarc.dir2splunk import Dir2Splunk
 
 def validate_input(helper, definition):
     """Implement your own validation logic to validate the input stanza configurations"""
-    pass
+
+    opt_imap_server    = definition.parameters.get("imap_server", None)
+    opt_use_ssl        = definition.parameters.get("use_ssl", None)
+    opt_global_account = definition.parameters.get('global_account', None)
+    opt_resolve_ip     = definition.parameters.get('resolve_ip', None)
+
+    i2d = Imap2Dir(helper, opt_imap_server, opt_use_ssl, opt_global_account)
+    i2d.get_imap_connectivity()
+    del i2d
 
 def collect_events(helper, ew):
     """Implement your data collection logic here """
@@ -40,3 +48,5 @@ def collect_events(helper, ew):
         if d2s.init_dirs():
             d2s.process_incoming()
             i2d.remove_tmp_dir()
+        del d2s
+    del i2d

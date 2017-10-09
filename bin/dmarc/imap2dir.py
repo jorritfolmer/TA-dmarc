@@ -11,6 +11,7 @@ import tempfile
 import pickle
 import shutil
 
+
 # Copyright 2017 Jorrit Folmer
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,10 +19,10 @@ import shutil
 # in the Software without restriction, including without limitation the rights to
 # use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
 # of the Software, and to permit persons to whom the Software is furnished to do
-# so, subject to the following conditions: #
+# so, subject to the following conditions:
 
 # The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.  #
+# all copies or substantial portions of the Software.
 
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -49,15 +50,33 @@ class Imap2Dir:
         self.opt_global_account = opt_global_account
         self.tmpdir             = None
         self.server             = None
+        self.seen_uids          = set()
+
+
+    def get_checkpoint_data(self):
         if self.helper.get_check_point("seen_uids") != None:
             self.seen_uids = pickle.loads(self.helper.get_check_point("seen_uids"))
-        else:
-            self.seen_uids = set()
 
 
     def add_seen_uid(self, uid):
         self.seen_uids.add(uid)
 
+
+    def get_imap_connectivity(self):
+        """ Connect to imap server and close the connection """
+        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        context.verify_mode = ssl.CERT_NONE
+        messages = []
+        try:
+            if self.opt_use_ssl:
+                self.server=IMAPClient(self.opt_imap_server, use_uid=True, ssl=True, ssl_context=context)
+            else:
+                self.server=IMAPClient(self.opt_imap_server, use_uid=True, ssl=False)
+        except Exception, e:
+            raise Exception("Error connecting to %s with exception %s" % (self.opt_imap_server, str(e)))
+        else:
+            self.helper.log_debug('Successfully connected to %s' % self.opt_imap_server)
+ 
 
     def get_dmarc_messages(self):
         """ Connect to imap server and return a list of msg uids that match the subject 'Report domain:' """
@@ -66,17 +85,17 @@ class Imap2Dir:
         messages = []
         try:
             if self.opt_use_ssl:
-                self.server=IMAPClient(self.opt_imap_server, use_uid=True,ssl=True, ssl_context=context)
+                self.server=IMAPClient(self.opt_imap_server, use_uid=True, ssl=True, ssl_context=context)
             else:
-                self.server=IMAPClient(self.opt_imap_server, use_uid=True,ssl=False)
+                self.server=IMAPClient(self.opt_imap_server, use_uid=True, ssl=False)
         except Exception, e:
             raise Exception("Error connecting to %s with exception %s" % (self.opt_imap_server, str(e)))
         else:
-            self.helper.log_info('Successfully connected to %s' % self.opt_imap_server)
+            self.helper.log_debug('Successfully connected to %s' % self.opt_imap_server)
             self.server.login(self.opt_global_account["username"], self.opt_global_account["password"])
             select_info = self.server.select_folder('INBOX')
             messages = self.server.search('SUBJECT "Report domain:"')
-            self.helper.log_info('%d messages match subject "Report domain:"' % len(messages))
+            self.helper.log_debug('%d messages match subject "Report domain:"' % len(messages))
         return messages
 
 
@@ -127,14 +146,45 @@ class Imap2Dir:
         if self.create_tmp_dir():
             for uid, data in response.items():
                 msg = email.message_from_string(data['RFC822'])
-                for part in msg.get_payload():
-                    ctype = part.get_content_type()
+                if msg.is_multipart():
+                    self.helper.log_debug('    - start multipart processing of msg uid  %d' % uid)
+                    for part in msg.get_payload():
+                        ctype = part.get_content_type()
+                        if ctype == "application/zip":
+                            filename = self.write_part_to_file(part)
+                            self.add_seen_uid(uid)
+                            filelist.append(filename)
+                        elif ctype == "application/gzip":
+                            filename = self.write_part_to_file(part)
+                            self.add_seen_uid(uid)
+                            filelist.append(filename)
+                        elif ctype == "application/xml":
+                            filename = self.write_part_to_file(part)
+                            self.add_seen_uid(uid)
+                            filelist.append(filename)
+                        elif ctype == "text/xml":
+                            filename = self.write_part_to_file(part)
+                            self.add_seen_uid(uid)
+                            filelist.append(filename)
+                        else:
+                            self.helper.log_debug('    - skipping content-type %s of msg uid %d' % (ctype, uid))
+                else:
+                    self.helper.log_debug('    - start non-multipart processing of msg uid  %d' % uid)
+                    ctype = msg.get_content_type()
                     if ctype == "application/zip":
-                        filename = self.write_part_to_file(part)
+                        filename = self.write_part_to_file(msg)
                         self.add_seen_uid(uid)
                         filelist.append(filename)
                     elif ctype == "application/gzip":
-                        filename = self.write_part_to_file(part)
+                        filename = self.write_part_to_file(msg)
+                        self.add_seen_uid(uid)
+                        filelist.append(filename)
+                    elif ctype == "application/xml":
+                        filename = self.write_part_to_file(msg)
+                        self.add_seen_uid(uid)
+                        filelist.append(filename)
+                    elif ctype == "text/xml":
+                        filename = self.write_part_to_file(msg)
                         self.add_seen_uid(uid)
                         filelist.append(filename)
                     else:
@@ -145,20 +195,26 @@ class Imap2Dir:
 
     def filter_seen_messages(self, messages):
         """ From a given list of uids, return only the ones we haven't seen before """
+        self.get_checkpoint_data()
         new_uids = set(messages) - self.seen_uids
+        self.helper.log_debug('filter_seen_messages: uids on imap   %s' % set(messages))
         self.helper.log_debug('filter_seen_messages: uids on imap   %s' % set(messages))
         self.helper.log_debug('filter_seen_messages: uids in checkp %s' % self.seen_uids)
         self.helper.log_debug('filter_seen_messages: uids new       %s' % new_uids)
         return new_uids
  
     def process_incoming(self):
-            """ Main function """
-            filelist=[]
-            messages = self.get_dmarc_messages()
-            new_messages = self.filter_seen_messages(messages)
-            if len(new_messages) > 0:
-                response = self.get_dmarc_message_bodies(new_messages)
-                filelist = self.save_reports_from_message_bodies(response)
-            return filelist
+        """ Main function """
+        filelist=[]
+        self.helper.log_info("Start processing imap server %s with use_ssl %s" % (self.opt_imap_server, self.opt_use_ssl))
+        messages = self.get_dmarc_messages()
+        new_messages = self.filter_seen_messages(messages)
+        if len(new_messages) > 0:
+            self.helper.log_info('Start processing %d new messages of %d on %s' % ( len(new_messages), len(messages), self.opt_imap_server))
+            response = self.get_dmarc_message_bodies(new_messages)
+            filelist = self.save_reports_from_message_bodies(response)
+            self.helper.log_info('Ended processing %d new messages with %d attachments' % ( len(new_messages), len(filelist)))
+        self.helper.log_info("Ended processing imap server %s" % self.opt_imap_server)
+        return filelist
 
 

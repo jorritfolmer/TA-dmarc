@@ -4,14 +4,18 @@ Add-on for ingesting DMARC XML aggregate reports into Splunk from an IMAP accoun
 
 ## Supported versions and platforms
 
-This add-on requires a Splunk heavy forwarder running:
-
 | Splunk version | Linux | Windows
 |----------------|-------|---------
-| 6.4            |       | No
-| 6.5            |       |
+| 6.3            | Yes   | Yes
+| 6.4            | Yes   | Yes
+| 6.5            | Yes   | Yes
 | 6.6            | Yes   | Yes
-| 7.0            |       |
+| 7.0            | Yes   | Yes
+
+Additional requirements:
+
+* Splunk heavy forwarder instance: Because of Python dependencies Splunk Universal Forwarder is not supported
+* KVstore: used for checkpointing mails-seen-on-IMAP. KVstore is enabled by default on Splunk instances,
 
 ## Install the TA-dmarc add-on for Splunk
 
@@ -38,6 +42,8 @@ The following table lists support for distributed deployment roles in a Splunk d
 | Deployment Server    | Yes  | Install this add-on on your Deployment Server to deploy it to search heads and heavy forwarders.
 
 ## Configure inputs for TA-dmarc
+
+![Screenshot create new input](static/screenshot_create_new_input.png)
 
 ### Directory input
 
@@ -78,6 +84,8 @@ TA-dmarc will leave mail untouched: it uses internal checkpointing to skip mails
    * Use SSL: whether or not to use an encrypted connection
    * Resolve IP: Whether or not to resolve the row source_ip in the DMARC XML aggregate reports
 
+![Create global account](static/screenshot_create_global_account.png)
+
 ## DMARC aggregate reports
 
 This add-on handles the following file formats in which aggregate reports are delivered:
@@ -104,18 +112,18 @@ From the XML sample below, these fields are created:
 |feedback/report_metadata/report_id | rpt_metadata_report_id           | 13190401177475355109                        | 
 |feedback/report_metadata/date_range/begin | rpt_metadata_date_range_begin    | 1506988800                                  | 
 |feedback/report_metadata/date_range/end | rpt_metadata_date_range_end      | 1507075199                                  | 
-|feedback/policy_published/domain  | policy_published_domain          | myfirstdomain.tld                           | 
+|feedback/policy_published/domain  | policy_published_domain          | example.com                           | 
 |feedback/policy_published/adkim   | policy_published_adkim           | r                                           | 
 |feedback/policy_published/adpf    | policy_published_aspf            | r                                           | 
 |feedback/policy_published/p       | policy_published_p               | none                                        | 
 |feedback/policy_published/pct     | policy_published_pct             | 100                                         | 
-|feedback/record/row/source_ip     | row_source_ip                    | 256.32.191.194                              | 
+|feedback/record/row/source_ip     | row_source_ip                    | 192.0.2.78                              | 
 |feedback/record/row/count         | row_count                        | 1                                           | 
 |feedback/record/row/policy_evaluated/disposition |row_policy_evaluated_disposition | none                                        | 
 |feedback/record/row/policy_evaluated/dkim |row_policy_evaluated_dkim        | fail                                        | 
 |feedback/record/row/policy_evaluated/spf  |row_policy_evaluated_spf         | fail                                        | 
-|feedback/record/identifiers/header_from   |identifiers_header_from          | myfirstdomain.tld                           | 
-|feedback/record/auth_results/spf/domain   | auth_result_spf_domain           | myfirstdomain.tld                           | 
+|feedback/record/identifiers/header_from   |identifiers_header_from          | example.com                           | 
+|feedback/record/auth_results/spf/domain   | auth_result_spf_domain           | example.com                           | 
 |feedback/record/auth_results/spf/domain   | auth_result_spf_result           | fail                                        | 
 
 ### Authentication datamodel
@@ -124,15 +132,16 @@ Besides the fields contained in the report, additional fields are mapped from th
 
 | Authentication datamodel field name  | Value                           |
 |--------------------------------------|---------------------------------|
-| action       | failure               |
-| app          | dmarc                 |
-| dest         | google.com            |
-| signature    | Use of mail-from domain myfirstdomain.tld |
-| signature_id | 13190401177475355109  |
-| src          | resolved.name.if.available.tld |
-| src_ip       | 256.32.191.194 |
-| eventtype    | dmarc_rua_spf_only |
-| tag          | authentication, insecure|
+| action                               | failure               |
+| app                                  | dmarc                 |
+| dest                                 | google.com            |
+| signature                            | Use of mail-from domain example.com |
+| signature_id                         | 13190401177475355109  |
+| src                                  | resolved.name.if.available.test |
+| src_ip                               | 192.0.2.78 |
+| src_user                             | example.com |
+| eventtype                            | dmarc_rua_spf_only |
+| tag                                  | authentication, insecure|
 
 
 ### DMARC XML sample
@@ -151,7 +160,7 @@ Besides the fields contained in the report, additional fields are mapped from th
     </date_range>
   </report_metadata>
   <policy_published>
-    <domain>myfirstdomain.tld</domain>
+    <domain>example.com</domain>
     <adkim>r</adkim>
     <aspf>r</aspf>
     <p>none</p>
@@ -160,7 +169,7 @@ Besides the fields contained in the report, additional fields are mapped from th
   </policy_published>
   <record>
     <row>
-      <source_ip>256.32.191.194</source_ip>
+      <source_ip>192.0.2.78</source_ip>
       <count>1</count>
       <policy_evaluated>
         <disposition>none</disposition>
@@ -169,11 +178,11 @@ Besides the fields contained in the report, additional fields are mapped from th
       </policy_evaluated>
     </row>
     <identifiers>
-      <header_from>myfirstdomain.tld</header_from>
+      <header_from>example.com</header_from>
     </identifiers>
     <auth_results>
       <spf>
-        <domain>myfirstdomain.tld</domain>
+        <domain>example.com</domain>
         <result>fail</result>
       </spf>
     </auth_results>
@@ -181,6 +190,12 @@ Besides the fields contained in the report, additional fields are mapped from th
 </feedback>
 ```
 
+## Advanced
+
+The DMARC-imap input saves checkpointing data in KVstore.
+To see its contents: `|inputlookup ta_dmarc_checkpointer`
+
+If you want to reindex an entire mailbox, you can do so by deleting the TA-dmarc KVstore checkpointing data through this Splunk command: `|makeresults | outputlookup ta_dmarc_checkpointer`
 
 ## Third party software credits
 
