@@ -201,9 +201,9 @@ If you want to reindex an entire mailbox, you can do so by deleting the TA-dmarc
 
 The following software components are used in this add-on:
 
-1. [defusedxml](https://pypi.python.org/pypi/defusedxml/0.5.0) by Christian Heimes
-2. [IMAPClient](https://github.com/mjs/imapclient) by Menno Finlay-Smits
-2. [Splunk Add-on Builder](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Overview) by Splunk and the [third-party software](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Thirdpartysoftwarecredits) it uses
+1. [defusedxml](https://pypi.python.org/pypi/defusedxml/0.5.0) version 0.5.0 by Christian Heimes
+2. [IMAPClient](https://github.com/mjs/imapclient) version 1.0.2 by Menno Finlay-Smits
+2. [Splunk Add-on Builder](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Overview) version 2.2.0 by Splunk and the [third-party software](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Thirdpartysoftwarecredits) it uses
 
 ## Support
 
