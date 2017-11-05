@@ -51,13 +51,6 @@ fields = [
         )
     ), 
     field.RestField(
-        'use_ssl',
-        required=False,
-        encrypted=False,
-        default=True,
-        validator=None
-    ), 
-    field.RestField(
         'resolve_ip',
         required=False,
         encrypted=False,

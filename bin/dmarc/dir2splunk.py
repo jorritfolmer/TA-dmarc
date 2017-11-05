@@ -9,6 +9,9 @@ import zlib
 import shutil
 import errno
 from collections import OrderedDict
+from dmarc.helper import create_tmp_dir
+from dmarc.helper import remove_tmp_dir
+import base64
 
 
 # Copyright 2017 Jorrit Folmer
@@ -36,23 +39,25 @@ class Dir2Splunk:
     """ This class:
         - parses DMARC aggregate report files in .xml, .xml.zip or .xml.gz
         - from a given directory
+        - take into account which files have already been processed in KVstore
         - and writes them to Splunk as events
         - in key="value" format.
     """
 
     # Class variables:
-    tmp_dir         = "tmp"
-    done_dir        = "done"
-    bad_dir         = "bad"
     max_size        = 100000000
 
-    def __init__(self, ew, helper, dir, quiet_secs, do_resolve):
+
+    def __init__(self, ew, helper, dir, quiet_secs, do_resolve, do_checkpoint=False):
         # Instance variables:
-        self.helper     = helper
-        self.ew         = ew
-        self.dir        = dir
-        self.do_resolve = do_resolve
-        self.quiet_secs = quiet_secs
+        self.helper        = helper
+        self.ew            = ew
+        self.dir           = dir
+        self.quiet_secs    = quiet_secs
+        self.do_resolve    = do_resolve
+        self.do_checkpoint = do_checkpoint
+        self.tmp_dir       = None
+
 
     def list_incoming(self):
         """ Returns a list of files for the incoming directory """
@@ -67,6 +72,7 @@ class Dir2Splunk:
                 newfileslist.append(file)
         return newfileslist
 
+
     def filter_quiet_files(self, fileslist):
         """ Filters fileslist for files that have modtime > quiet_secs """
         newfileslist=[]
@@ -79,6 +85,35 @@ class Dir2Splunk:
             if ct-mt > self.quiet_secs:
                 newfileslist.append(file)
         return newfileslist
+
+
+    def filter_seen_files(self, fileslist):
+        """ From a given fileslist of uids, return only the ones we haven't seen before 
+	    based on the presence of a KVstore key.  This key uses the base64
+            encoding of the filename because mongo doesn't like slashes in the key """
+        seen_files = set()
+        for file in fileslist:
+            key = "%s" % base64.b64encode(file)
+            if(self.helper.get_check_point(key) != None):
+                seen_files.add(file)
+        new_files = set(fileslist) - seen_files
+        self.helper.log_debug('filter_seen_files: files in dir   %s' % set(fileslist))
+        self.helper.log_debug('filter_seen_files: files in checkp %s' % seen_files)
+        self.helper.log_debug('filter_seen_files: files new       %s' % new_files)
+        return new_files
+
+
+    def save_check_point(self, file):
+	""" Save a filename to the KVstore with base64 encoded key because
+            mongo doesn't like os.sep characters in the key 
+        """
+        key = "%s" % base64.b64encode(file)
+        value = "input=dmarc_dir, file='%s'" % file
+        try:
+            self.helper.save_check_point(key, value)
+        except Exception, e:
+            raise Exception("Error saving checkpoint data with with exception %s" % str(e))
+
 
     def rua2kv(self, xmldata):
 	""" Returns a string in kv format based on RUA XML input, with
@@ -139,46 +174,35 @@ class Dir2Splunk:
         self.helper.log_debug("    - report_id %s finished parsing" % xmldata.findtext("report_metadata/report_id", default="")) 
         return result
 
+
     def process_zipfile(self, file):
-        """ Unzip a given zip file, move any member in it to tmp_dir/,
+        """ Unzip a given zip file to tmp_dir,
             return a list of extracted members, but only it they have an .xml extension,
-            and move the zip file to done_dir
         """
         members = []
         try:
             zf = zipfile.ZipFile(file, 'r')
         except Exception, e:
-            self.helper.log_warning("    - moving bad zip file %s to bad_dir due to %s" % (file, e))
-            dest = os.path.join(self.dir,self.bad_dir,os.path.basename(file))
-            try:
-                shutil.move(file,dest)
-            except Exception, e:
-                raise Exception("    - error moving %s to bad_dir with exception %s" % (file, e))
+            self.helper.log_warning("    - ignoring bad zip file %s due to %s" % (file, e))
             return members
         else:
-            self.helper.log_debug("    - extracting zip file %s" % file)
+            self.helper.log_debug("    - extracting zip file %s to %s" % (file, self.tmp_dir))
             for member in zf.infolist():
                 self.helper.log_debug("    - contains %s of size %d (zip file %s)" % (member.filename, member.file_size, file))
-                # Protect against ZIP bombs we only include members smaller than 100MB:
+                # To protect against ZIP bombs we only include members smaller than 100MB:
                 if member.file_size < self.max_size:
-                    zf.extract(member.filename,os.path.join(self.dir,self.tmp_dir))
+                    zf.extract(member.filename,self.tmp_dir)
                     if os.path.splitext(member.filename)[1] == ".xml":
-                        members.append(os.path.join(self.dir,self.tmp_dir, member.filename))
+                        members.append(os.path.join(self.tmp_dir, member.filename))
                 else:
                     self.helper.log_warning("    - skipping oversized member %s of size %d from zip file %s" % (member.filename, member.file_size, file))
             zf.close()
-            # Prepare to move zipfile to donedir
-            dest = os.path.join(self.dir,self.done_dir,os.path.basename(file))
-            self.helper.log_debug("    - moving %s to %s" % (file,dest))
-            try:
-                shutil.move(file,dest)
-            except Exception, e:
-                raise Exception("    - error moving %s to done_dir with exception %s" % (file, e))
+            self.helper.log_debug("    - finished extracting zip file %s to %s" % (file,self.tmp_dir))
             return members
 
 
     def process_gzfile(self, file):
-        """ Decompress a gz file, write to temp, move to done_dir, and return a list of the extracted member """
+        """ Decompress a gz file to tmp_dir, and return a list of the extracted member """
         members = []
         with open(file, 'rb') as f:
             self.helper.log_debug("    - extracting gz file %s" % file)
@@ -189,12 +213,7 @@ class Dir2Splunk:
                 # Protect against gzip bombs by limiting decompression to max_size
                 unz  = zobj.decompress(data, self.max_size)
             except Exception,e:
-                self.helper.log_warning("    - moving bad gz file %s to bad_dir because of %s" % (file,e))
-                dest = os.path.join(self.dir,self.bad_dir,os.path.basename(file))
-                try:
-                    shutil.move(file,dest)
-                except Exception, e:
-                    raise Exception("    - error moving %s to bad_dir with exception %s" % (file, e))
+                self.helper.log_warning("    - ignoring bad gz file %s because of %s" % (file,e))
             else:
                 if zobj.unconsumed_tail:
                     del data
@@ -204,26 +223,18 @@ class Dir2Splunk:
                 else:
                     del data
                     del zobj
-                    member = os.path.join(self.dir,self.tmp_dir,os.path.basename(os.path.splitext(file)[0]))
+                    member = os.path.join(self.tmp_dir,os.path.basename(os.path.splitext(file)[0]))
                     with open(member,"w") as m:
                         self.helper.log_debug("   - writing to %s" % member)
                         m.write(unz)
                         m.close()
                         del unz
-                        # Prepare to move gz file to done_dir
-                        dest = os.path.join(self.dir,self.done_dir,os.path.basename(file))
-                        self.helper.log_debug("    - moving %s to %s" % (file,dest))
-                        try:
-                            shutil.move(file,dest)
-                        except Exception, e:
-                            raise Exception("    - error moving %s to done_dir with exception %s" % (file, e))
                         m.close()
                         members.append(member)
         return members
 
     def process_xmlfile_to_lines(self, file, keep):
         """ Processes an XML from from a given directory,
-            move it to the done_dir,
             and return a list of lines in kv format
         """
         lines = []
@@ -238,61 +249,19 @@ class Dir2Splunk:
                 f.close()
                 lines = self.rua2kv(xmldata)
                 del xmldata
-                dest = os.path.join(self.dir,self.done_dir,os.path.basename(file))
-                self.helper.log_debug("    - moving %s to %s" % (file,dest))
-                if keep:
-                    try:
-                        shutil.move(file,dest)
-                    except Exception, e:
-                        raise Exception("    - error moving %s to done_dir with exception %s" % (file, e))
-                else:
-                    try:
-                        self.helper.log_debug("    - deleting %s" % file)
-                        os.remove(file)
-                    except Exception, e:
-                        raise Exception("    - error deleting file %s from tmp_dir with exception %s" % (file, e))
         return lines
 
 
     def check_dir(self):
-        """ Check if dir is readable and writable
-        """
+        """ Check if self.dir is readable """
         try:
             list = os.listdir(self.dir)
         except Exception as e:
             raise Exception("Error: directory %s not readable with exception %s" % (self.dir, e))
         else:
-            if os.access(self.dir, os.W_OK):
-                return True
-            else:
-                raise Exception("Error: directory %s not writable with exception %s" % (self.dir, e))
-
-
-    def make_dir(self,dir):
-        """ Create a directory
-        """
-        try:
-            os.makedirs(dir)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-               raise Exception("Cannot create directory %s with exception %s" % (dir,e))
-
-
-    def init_dirs(self):
-        """ Create tmp_dir and done_dir if they don't exist
-        """
-        tmp_dir  = os.path.join(self.dir,self.tmp_dir)
-        done_dir = os.path.join(self.dir,self.done_dir)
-        bad_dir  = os.path.join(self.dir,self.bad_dir)
-        if self.check_dir():
-            self.make_dir(tmp_dir)
-            self.make_dir(done_dir)
-            self.make_dir(bad_dir)
             return True
-        else:
-            return False
 
-        
+
     def write_event(self, lines):
         try:
             for line in lines:
@@ -307,24 +276,34 @@ class Dir2Splunk:
         """
         events = []
         self.helper.log_info("Start processing incoming directory %s with %d quiet_secs" % (self.dir, self.quiet_secs))
-        fileslist = self.filter_quiet_files(self.list_incoming())
-        for file in fileslist:
-            ext = os.path.splitext(file)[1]
-            if ext == ".zip":
-                self.helper.log_info("Start processing zip file %s" % file)
-                for xmlfile in self.process_zipfile(file):
-                    lines = self.process_xmlfile_to_lines(xmlfile,0)
+        try:
+            self.check_dir()
+            self.tmp_dir = create_tmp_dir(self.helper)
+            fileslist = self.filter_quiet_files(self.list_incoming())
+            if self.do_checkpoint:
+                fileslist = self.filter_seen_files(fileslist)
+            for file in fileslist:
+                ext = os.path.splitext(file)[1]
+                if ext == ".zip":
+                    self.helper.log_info("Start processing zip file %s" % file)
+                    for xmlfile in self.process_zipfile(file):
+                        lines = self.process_xmlfile_to_lines(xmlfile,0)
+                        self.write_event(lines)
+                elif ext == ".gz":
+                    self.helper.log_info("Start processing gz file %s" % file)
+                    for xmlfile in self.process_gzfile(file):
+                        lines = self.process_xmlfile_to_lines(xmlfile,0)
+                        self.write_event(lines)
+                elif ext == ".xml":
+                    self.helper.log_info("Start processing xml file %s" % file)
+                    lines = self.process_xmlfile_to_lines(file,1)
                     self.write_event(lines)
-            elif ext == ".gz":
-                self.helper.log_info("Start processing gz file %s" % file)
-                for xmlfile in self.process_gzfile(file):
-                    lines = self.process_xmlfile_to_lines(xmlfile,0)
-                    self.write_event(lines)
-            elif ext == ".xml":
-                self.helper.log_info("Start processing xml file %s" % file)
-                lines = self.process_xmlfile_to_lines(file,1)
-                self.write_event(lines)
-            else:
-                self.helper.log_debug("Ignoring file %s" % file)
-        self.helper.log_info("Ended processing incoming directory %s" % self.dir)
+                else:
+                    self.helper.log_debug("Ignoring file %s" % file)
+                if self.do_checkpoint:
+                    self.save_check_point(file)
+        finally:
+            self.helper.log_info("Ended processing incoming directory %s" % self.dir)
+            remove_tmp_dir(self.helper, self.tmp_dir)
+            self.helper.log_debug("Removed tmp_dir %s" % self.tmp_dir)
 

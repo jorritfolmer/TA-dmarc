@@ -35,31 +35,19 @@ import shutil
 
 class Imap2Dir:
     """ This class:
-        - gets DMARC aggregate report attachments from a mailbox
-        - and saves them to a temp directory
-
-        Any further processing  be done with the Dir2Splunk class,
+        - gets DMARC XML aggregate report attachments from a mailbox
+        - and saves them to a provided tmp directory
     """
 
 
-    def __init__(self, helper, opt_imap_server, opt_use_ssl, opt_global_account):
+    def __init__(self, helper, opt_imap_server, tmp_dir, opt_use_ssl, opt_global_account):
         # Instance variables:
         self.helper             = helper
         self.opt_imap_server    = opt_imap_server
         self.opt_use_ssl        = opt_use_ssl
         self.opt_global_account = opt_global_account
-        self.tmpdir             = None
+        self.tmp_dir            = tmp_dir
         self.server             = None
-        self.seen_uids          = set()
-
-
-    def get_checkpoint_data(self):
-        if self.helper.get_check_point("seen_uids") != None:
-            self.seen_uids = pickle.loads(self.helper.get_check_point("seen_uids"))
-
-
-    def add_seen_uid(self, uid):
-        self.seen_uids.add(uid)
 
 
     def get_imap_connectivity(self):
@@ -108,7 +96,7 @@ class Imap2Dir:
     def write_part_to_file(self, part):
         """ Write the selected message part to file """
         filename = part.get_filename()
-        filename = os.path.join(self.tmpdir, os.path.basename(filename))
+        filename = os.path.join(self.tmp_dir, os.path.basename(filename))
         try:
              open(filename, 'wb').write(part.get_payload(decode=True))
         except Exception, e:
@@ -118,88 +106,76 @@ class Imap2Dir:
              return filename
 
 
-    def create_tmp_dir(self):
-        try:
-            self.tmpdir = tempfile.mkdtemp()
-        except Exception, e:
-            raise Exception("Exception creating temporary directory %s: %s" % (self.tmpdir, str(e)))
-        else:
-            self.helper.log_debug("Success creating temporary directory %s" % (self.tmpdir))
-            return True;
-
-
-    def remove_tmp_dir(self):
-        if self.tmpdir != None:
-            try:
-                shutil.rmtree(self.tmpdir)
-            except Exception, e:
-                raise Exception("Exception deleting temporary directory %s: %s" % (self.tmpdir, str(e)))
-            else:
-                self.helper.log_debug("Success deleting temporary directory %s" % (self.tmpdir))
-                return True
-        return False
-
-
     def save_reports_from_message_bodies(self, response):
-        """ Find zip and gzip attachments in the response, and write them to disk """
+        """ Find zip and gzip attachments in the response, and write them to disk 
+            Return a list of filenames that were written
+        """
         filelist = []
-        if self.create_tmp_dir():
-            for uid, data in response.items():
-                msg = email.message_from_string(data['RFC822'])
-                if msg.is_multipart():
-                    self.helper.log_debug('    - start multipart processing of msg uid  %d' % uid)
-                    for part in msg.get_payload():
-                        ctype = part.get_content_type()
-                        if ctype == "application/zip":
-                            filename = self.write_part_to_file(part)
-                            self.add_seen_uid(uid)
-                            filelist.append(filename)
-                        elif ctype == "application/gzip":
-                            filename = self.write_part_to_file(part)
-                            self.add_seen_uid(uid)
-                            filelist.append(filename)
-                        elif ctype == "application/xml":
-                            filename = self.write_part_to_file(part)
-                            self.add_seen_uid(uid)
-                            filelist.append(filename)
-                        elif ctype == "text/xml":
-                            filename = self.write_part_to_file(part)
-                            self.add_seen_uid(uid)
-                            filelist.append(filename)
-                        else:
-                            self.helper.log_debug('    - skipping content-type %s of msg uid %d' % (ctype, uid))
-                else:
-                    self.helper.log_debug('    - start non-multipart processing of msg uid  %d' % uid)
-                    ctype = msg.get_content_type()
+        for uid, data in response.items():
+            msg = email.message_from_string(data['RFC822'])
+            if msg.is_multipart():
+                self.helper.log_debug('    - start multipart processing of msg uid  %d' % uid)
+                for part in msg.get_payload():
+                    ctype = part.get_content_type()
                     if ctype == "application/zip":
-                        filename = self.write_part_to_file(msg)
-                        self.add_seen_uid(uid)
+                        filename = self.write_part_to_file(part)
                         filelist.append(filename)
                     elif ctype == "application/gzip":
-                        filename = self.write_part_to_file(msg)
-                        self.add_seen_uid(uid)
+                        filename = self.write_part_to_file(part)
                         filelist.append(filename)
                     elif ctype == "application/xml":
-                        filename = self.write_part_to_file(msg)
-                        self.add_seen_uid(uid)
+                        filename = self.write_part_to_file(part)
                         filelist.append(filename)
                     elif ctype == "text/xml":
-                        filename = self.write_part_to_file(msg)
-                        self.add_seen_uid(uid)
+                        filename = self.write_part_to_file(part)
                         filelist.append(filename)
                     else:
                         self.helper.log_debug('    - skipping content-type %s of msg uid %d' % (ctype, uid))
-            self.helper.save_check_point("seen_uids", pickle.dumps(self.seen_uids))
+            else:
+                self.helper.log_debug('    - start non-multipart processing of msg uid  %d' % uid)
+                ctype = msg.get_content_type()
+                if ctype == "application/zip":
+                    filename = self.write_part_to_file(msg)
+                    filelist.append(filename)
+                elif ctype == "application/gzip":
+                    filename = self.write_part_to_file(msg)
+                    filelist.append(filename)
+                elif ctype == "application/xml":
+                    filename = self.write_part_to_file(msg)
+                    filelist.append(filename)
+                elif ctype == "text/xml":
+                    filename = self.write_part_to_file(msg)
+                    filelist.append(filename)
+                else:
+                    self.helper.log_debug('    - skipping content-type %s of msg uid %d' % (ctype, uid))
+            # mark msg as seen in KVstore
+            self.save_check_point(uid, msg)
         return filelist
+
+    def save_check_point(self, uid, msg):
+        key = "%s_%s_%d" % (self.opt_imap_server, self.opt_global_account["username"], uid)
+        date = email.utils.mktime_tz(email.utils.parsedate_tz(msg.get('Date')))
+        value = "input=dmarc_imap, server=%s, username=%s, uid=%d, timestamp_utc=%d, subject='%s'" % (self.opt_imap_server, self.opt_global_account["username"], uid, date, msg.get('Subject'))
+        try:
+            self.helper.save_check_point(key, value)
+        except Exception, e:
+            raise Exception("Error saving checkpoint data with with exception %s" % str(e))
 
 
     def filter_seen_messages(self, messages):
-        """ From a given list of uids, return only the ones we haven't seen before """
-        self.get_checkpoint_data()
-        new_uids = set(messages) - self.seen_uids
+        """ From a given list of uids, return only the ones we haven't seen before 
+            based on the presence of a KVstore key.
+            This key takes into account: imap server, imap account and imap msg uid
+        """
+        seen_uids = set()
+        for uid in messages:
+            key = "%s_%s_%d" % (self.opt_imap_server, self.opt_global_account["username"], uid)
+            if(self.helper.get_check_point(key) != None):
+                seen_uids.add(uid)
+        new_uids = set(messages) - seen_uids
         self.helper.log_debug('filter_seen_messages: uids on imap   %s' % set(messages))
         self.helper.log_debug('filter_seen_messages: uids on imap   %s' % set(messages))
-        self.helper.log_debug('filter_seen_messages: uids in checkp %s' % self.seen_uids)
+        self.helper.log_debug('filter_seen_messages: uids in checkp %s' % seen_uids)
         self.helper.log_debug('filter_seen_messages: uids new       %s' % new_uids)
         return new_uids
  

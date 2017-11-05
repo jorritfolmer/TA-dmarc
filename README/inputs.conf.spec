@@ -5,6 +5,5 @@ resolve_ip = Resolve the source_ip field in the DMARC XML aggregate report
 
 [dmarc_imap://<name>]
 global_account = Use the account configured in the setup tab
-imap_server = Specify the IMAP server
-use_ssl = 
+imap_server = Connect to the specified IMAP server with TLS (port 993)
 resolve_ip = Resolve the source_ip field in the DMARC aggregate reports.

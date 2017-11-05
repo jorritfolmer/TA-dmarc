@@ -51,12 +51,8 @@ class ModInputdmarc_imap(modinput_wrapper.base_modinput.BaseModInput):
                                          required_on_create=True,
                                          required_on_edit=False))
         scheme.add_argument(smi.Argument("imap_server", title="IMAP server",
-                                         description="Specify the IMAP server",
+                                         description="Connect to the specified IMAP server with TLS (port 993)",
                                          required_on_create=True,
-                                         required_on_edit=False))
-        scheme.add_argument(smi.Argument("use_ssl", title="Use SSL",
-                                         description="",
-                                         required_on_create=False,
                                          required_on_edit=False))
         scheme.add_argument(smi.Argument("resolve_ip", title="Resolve IP",
                                          description="Resolve the source_ip field in the DMARC aggregate reports.",
@@ -82,7 +78,6 @@ class ModInputdmarc_imap(modinput_wrapper.base_modinput.BaseModInput):
 
     def get_checkbox_fields(self):
         checkbox_fields = []
-        checkbox_fields.append("use_ssl")
         checkbox_fields.append("resolve_ip")
         return checkbox_fields
 

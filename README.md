@@ -15,7 +15,7 @@ Add-on for ingesting DMARC XML aggregate reports into Splunk from an IMAP accoun
 Additional requirements:
 
 * Splunk heavy forwarder instance: Because of Python dependencies Splunk Universal Forwarder is not supported
-* KVstore: used for checkpointing mails-seen-on-IMAP. KVstore is enabled by default on Splunk instances,
+* KVstore: used for checkpointing mails-seen-on-IMAP. KVstore is enabled by default on Splunk instances.
 
 ## Install the TA-dmarc add-on for Splunk
 
@@ -28,7 +28,7 @@ Additional requirements:
 
 | Instance type | Supported | Required | Description
 |---------------|-----------|----------|------------
-| Search head   | Yes       | Yes      | Install this add-on on your search head(s) where CIM compliance of DMARX aggregate reports is required
+| Search head   | Yes       | Yes      | Install this add-on on your search head(s) where CIM compliance of DMARC aggregate reports is required
 | Indexer       | Yes       | No       | This add-on should be installed on a heavy forwarder that does the index time parsing. There is no need to install this add-on on an indexer too.
 | Universal Forwarder | No  | No       | This add-on is not supported on a Universal Forwarder because it requires Python
 | Heavy Forwarder     | Yes | Yes      | Install this add-on on a heavy forwarder to ingest DMARC XML aggregate reports into Splunk.
@@ -43,7 +43,12 @@ The following table lists support for distributed deployment roles in a Splunk d
 
 ## Configure inputs for TA-dmarc
 
-![Screenshot create new input](static/screenshot_create_new_input.png)
+![Screenshot create new input](appserver/static/screenshot.png)
+
+The TA-dmarc supports the following input modes:
+
+* Read aggregate reports from an IMAP account. The add-on only ingests mails with "Report domain:" in the subject. It leaves the ingested mails on the IMAP server and keeps a record of which mails have already been processed.
+* Read aggregate reports from a directory. This can be useful to batch load the aggregate reports in non-internet-connected environments.
 
 ### Directory input
 
@@ -66,7 +71,7 @@ It will process files with .xml, .zip or .xml.gz extension, ingest them into Spl
 
 TA-dmarc can also fetch DMARC aggregate report attachments from mails on an IMAP server. It will process attachments in .zip or .gz format and ingest them into Splunk.
 
-TA-dmarc will leave mail untouched: it uses internal checkpointing to skip mails that have already been ingested into Splunk.
+TA-dmarc will leave the mails on the server: it uses internal checkpointing to skip mails that have been previously ingested.
 
 1. Go to the add-on's configuration UI and configure an account to authenticate with:
    * Account Name: descriptive account name, e.g. google_dmarc_mailbox
@@ -84,15 +89,15 @@ TA-dmarc will leave mail untouched: it uses internal checkpointing to skip mails
    * Use SSL: whether or not to use an encrypted connection
    * Resolve IP: Whether or not to resolve the row source_ip in the DMARC XML aggregate reports
 
-![Create global account](static/screenshot_create_global_account.png)
+![Create global account](appserver/static/screenshot_create_global_account.png)
 
 ## DMARC aggregate reports
 
 This add-on handles the following file formats in which aggregate reports are delivered:
 
 1. XML (as .xml file)
-2. ZIP (as .zip)
-3. GZ (as .xml.gz)
+2. ZIP (as .zip file)
+3. GZ (as .xml.gz file)
 
 Mitigations are in place against:
 
