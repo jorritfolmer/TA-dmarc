@@ -1,13 +1,9 @@
 import os
-import sys
 import time
-import datetime
 import socket
 from defusedxml.ElementTree import parse
 import zipfile
 import zlib
-import shutil
-import errno
 from collections import OrderedDict
 from dmarc.helper import create_tmp_dir
 from dmarc.helper import remove_tmp_dir
@@ -64,7 +60,7 @@ class Dir2Splunk:
         newfileslist=[]
         try:
             fileslist = os.listdir(self.dir)
-        except Exception as e:
+        except Exception:
             raise Exception("Path does not exist: %s" % self.dir)
         for shortfile in fileslist:
             file = os.path.join(self.dir,shortfile)
@@ -79,7 +75,7 @@ class Dir2Splunk:
         for file in fileslist:
             try:
                 mt = os.stat(file).st_mtime
-            except Exception as e:
+            except Exception:
                 raise ValueError("Cannot determine modtime of %s" % file)
             ct = time.time()
             if ct-mt > self.quiet_secs:
@@ -104,7 +100,7 @@ class Dir2Splunk:
 
 
     def save_check_point(self, file):
-	""" Save a filename to the KVstore with base64 encoded key because
+        """ Save a filename to the KVstore with base64 encoded key because
             mongo doesn't like os.sep characters in the key 
         """
         key = "%s" % base64.b64encode(file)
@@ -116,7 +112,7 @@ class Dir2Splunk:
 
 
     def rua2kv(self, xmldata):
-	""" Returns a string in kv format based on RUA XML input, with
+        """ Returns a string in kv format based on RUA XML input, with
             optionally resolved IP addresses  
         """ 
         mapping_meta = OrderedDict([
@@ -233,7 +229,7 @@ class Dir2Splunk:
                         members.append(member)
         return members
 
-    def process_xmlfile_to_lines(self, file, keep):
+    def process_xmlfile_to_lines(self, file):
         """ Processes an XML from from a given directory,
             and return a list of lines in kv format
         """
@@ -244,7 +240,7 @@ class Dir2Splunk:
                 # To protect against various XML threats we use the parse function from defusedxml.ElementTree
                 xmldata = parse(f)
             except Exception, e:
-                 self.helper.log_warning("process_xmlfile_to_lines: XML parse error in file %s with exception %s" % (file, e))
+                self.helper.log_warning("process_xmlfile_to_lines: XML parse error in file %s with exception %s" % (file, e))
             else:
                 f.close()
                 lines = self.rua2kv(xmldata)
@@ -255,7 +251,7 @@ class Dir2Splunk:
     def check_dir(self):
         """ Check if self.dir is readable """
         try:
-            list = os.listdir(self.dir)
+            os.listdir(self.dir)
         except Exception as e:
             raise Exception("Error: directory %s not readable with exception %s" % (self.dir, e))
         else:
@@ -274,7 +270,6 @@ class Dir2Splunk:
     def process_incoming(self):
         """ Processes the main incoming directory
         """
-        events = []
         self.helper.log_info("Start processing incoming directory %s with %d quiet_secs" % (self.dir, self.quiet_secs))
         try:
             self.check_dir()
@@ -287,16 +282,16 @@ class Dir2Splunk:
                 if ext == ".zip":
                     self.helper.log_info("Start processing zip file %s" % file)
                     for xmlfile in self.process_zipfile(file):
-                        lines = self.process_xmlfile_to_lines(xmlfile,0)
+                        lines = self.process_xmlfile_to_lines(xmlfile)
                         self.write_event(lines)
                 elif ext == ".gz":
                     self.helper.log_info("Start processing gz file %s" % file)
                     for xmlfile in self.process_gzfile(file):
-                        lines = self.process_xmlfile_to_lines(xmlfile,0)
+                        lines = self.process_xmlfile_to_lines(xmlfile)
                         self.write_event(lines)
                 elif ext == ".xml":
                     self.helper.log_info("Start processing xml file %s" % file)
-                    lines = self.process_xmlfile_to_lines(file,1)
+                    lines = self.process_xmlfile_to_lines(file)
                     self.write_event(lines)
                 else:
                     self.helper.log_debug("process_incoming: Ignoring file %s" % file)

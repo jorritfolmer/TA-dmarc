@@ -1,19 +1,12 @@
-
 # encoding = utf-8
 
-import os
-import sys
-import time
-import datetime
 from dmarc.dir2splunk import Dir2Splunk
 
 
-'''
-    IMPORTANT
-    Edit only the validate_input and collect_events functions.
-    Do not edit any other part in this file.
-    This file is generated only once when creating the modular input.
-'''
+# IMPORTANT
+# Edit only the validate_input and collect_events functions.
+# Do not edit any other part in this file.
+# This file is generated only once when creating the modular input. 
 
 
 def validate_input(helper, definition):
@@ -24,8 +17,8 @@ def validate_input(helper, definition):
     opt_resolve_ip      = definition.parameters.get('resolve_ip', None)
 
     try:
-        test = int(opt_quiet_time)   
-    except Exception as e:
+        int(opt_quiet_time)   
+    except Exception:
         raise ValueError("Error: quiet_time not an integer")
 
     d2s = Dir2Splunk(None, helper, opt_dmarc_directory, opt_quiet_time, opt_resolve_ip)

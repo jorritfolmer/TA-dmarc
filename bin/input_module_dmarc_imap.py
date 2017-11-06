@@ -1,23 +1,15 @@
 # encoding = utf-8
 
-import os
-import sys
-import time
-import datetime
-import tempfile
-import shutil
 from dmarc.imap2dir import Imap2Dir
 from dmarc.dir2splunk import Dir2Splunk
 from dmarc.helper import create_tmp_dir
 from dmarc.helper import remove_tmp_dir
 
 
-'''
-    IMPORTANT
-    Edit only the validate_input and collect_events functions.
-    Do not edit any other part in this file.
-    This file is generated only once when creating the modular input.
-'''
+# IMPORTANT
+# Edit only the validate_input and collect_events functions.
+# Do not edit any other part in this file.
+# This file is generated only once when creating the modular input.
 
 def validate_input(helper, definition):
     """Implement your own validation logic to validate the input stanza configurations"""
@@ -25,7 +17,6 @@ def validate_input(helper, definition):
     opt_imap_server    = definition.parameters.get("imap_server", None)
     opt_use_ssl        = True
     opt_global_account = definition.parameters.get('global_account', None)
-    opt_resolve_ip     = definition.parameters.get('resolve_ip', None)
 
     try:
         tmp_dir = create_tmp_dir(helper)
@@ -41,7 +32,7 @@ def collect_events(helper, ew):
     opt_use_ssl        = True
     opt_global_account = helper.get_arg('global_account')
     opt_resolve_ip     = helper.get_arg('resolve_ip')
-    
+
     loglevel   = helper.get_log_level()
     helper.set_log_level(loglevel)
 

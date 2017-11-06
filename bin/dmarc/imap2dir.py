@@ -1,15 +1,7 @@
 import os
-import sys
-import time
-import datetime
-import socket
-import errno
 import ssl
-from imapclient import IMAPClient
 import email
-import tempfile
-import pickle
-import shutil
+from imapclient import IMAPClient
 
 
 # Copyright 2017 Jorrit Folmer
@@ -54,7 +46,6 @@ class Imap2Dir:
         """ Connect to imap server and close the connection """
         context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
         context.verify_mode = ssl.CERT_NONE
-        messages = []
         try:
             if self.opt_use_ssl:
                 self.server=IMAPClient(self.opt_imap_server, use_uid=True, ssl=True, ssl_context=context)
@@ -81,16 +72,16 @@ class Imap2Dir:
         else:
             self.helper.log_debug('get_dmarc_messages: successfully connected to %s' % self.opt_imap_server)
             self.server.login(self.opt_global_account["username"], self.opt_global_account["password"])
-            select_info = self.server.select_folder('INBOX')
+            self.server.select_folder('INBOX')
             messages = self.server.search('SUBJECT "Report domain:"')
             self.helper.log_debug('get_dmarc_messages: %d messages match subject "Report domain:"' % len(messages))
         return messages
 
 
     def get_dmarc_message_bodies(self, messages):
-            """ Return the full message bodies from the list of message uids """
-            response = self.server.fetch(messages, ['RFC822'])
-            return response
+        """ Return the full message bodies from the list of message uids """
+        response = self.server.fetch(messages, ['RFC822'])
+        return response
 
 
     def write_part_to_file(self, uid, part):
@@ -98,12 +89,12 @@ class Imap2Dir:
         filename = part.get_filename()
         filename = os.path.join(self.tmp_dir, os.path.basename(filename))
         try:
-             open(filename, 'wb').write(part.get_payload(decode=True))
+            open(filename, 'wb').write(part.get_payload(decode=True))
         except Exception, e:
-             raise Exception("Error writing to filename %s with exception %s" % (filename, str(e)))
+            raise Exception("Error writing to filename %s with exception %s" % (filename, str(e)))
         else:
-             self.helper.log_debug('write_part_to_file: saved file %s from uid %d' % (filename, uid))
-             return filename
+            self.helper.log_debug('write_part_to_file: saved file %s from uid %d' % (filename, uid))
+            return filename
 
 
     def save_reports_from_message_bodies(self, response):
@@ -176,7 +167,7 @@ class Imap2Dir:
         seen_uids = set()
         for uid in messages:
             key = "%s_%s_%d" % (self.opt_imap_server, self.opt_global_account["username"], uid)
-            if(self.helper.get_check_point(key) != None):
+            if self.helper.get_check_point(key) != None:
                 seen_uids.add(uid)
         new_uids = set(messages) - seen_uids
         self.helper.log_debug('filter_seen_messages: uids on imap   %s' % set(messages))
