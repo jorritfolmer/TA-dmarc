@@ -155,7 +155,7 @@ class Dir2Splunk:
             if field != None:
                 meta += "%s=\"%s\",\n" % (mapping_meta[key], field)
         records = xmldata.findall("record")
-        self.helper.log_debug("    - report_id %s has %d records" % (xmldata.findtext("report_metadata/report_id", default=""), len(records)))
+        self.helper.log_debug("rua2kv: report_id %s has %d records" % (xmldata.findtext("report_metadata/report_id", default=""), len(records)))
         result = []
         for record in records:
             data = ''
@@ -165,13 +165,13 @@ class Dir2Splunk:
                     data += "%s=\"%s\",\n" % (mapping_record[key], field)
                 if key == "row/source_ip" and self.do_resolve:
                     try:
-                        self.helper.log_debug("    - resolving %s" % field) 
+                        self.helper.log_debug("rua2kv: resolving %s" % field) 
                         resolve = socket.gethostbyaddr(field)
                         data += "src=\"%s\",\n" % resolve[0]
                     except Exception:
-                        self.helper.log_debug("    - failed to resolve %s" % field) 
+                        self.helper.log_debug("rua2kv: failed to resolve %s" % field) 
             result.append("RUA BEGIN\n" + meta + data)
-        self.helper.log_debug("    - report_id %s finished parsing" % xmldata.findtext("report_metadata/report_id", default="")) 
+        self.helper.log_debug("rua2kv: report_id %s finished parsing" % xmldata.findtext("report_metadata/report_id", default="")) 
         return result
 
 
@@ -183,21 +183,21 @@ class Dir2Splunk:
         try:
             zf = zipfile.ZipFile(file, 'r')
         except Exception, e:
-            self.helper.log_warning("    - ignoring bad zip file %s due to %s" % (file, e))
+            self.helper.log_warning("process_zipfile: ignoring bad zip file %s due to %s" % (file, e))
             return members
         else:
-            self.helper.log_debug("    - extracting zip file %s to %s" % (file, self.tmp_dir))
+            self.helper.log_debug("process_zipfile: extracting zip file %s to %s" % (file, self.tmp_dir))
             for member in zf.infolist():
-                self.helper.log_debug("    - contains %s of size %d (zip file %s)" % (member.filename, member.file_size, file))
+                self.helper.log_debug("process_zipfile: contains %s of size %d (zip file %s)" % (member.filename, member.file_size, file))
                 # To protect against ZIP bombs we only include members smaller than 100MB:
                 if member.file_size < self.max_size:
                     zf.extract(member.filename,self.tmp_dir)
                     if os.path.splitext(member.filename)[1] == ".xml":
                         members.append(os.path.join(self.tmp_dir, member.filename))
                 else:
-                    self.helper.log_warning("    - skipping oversized member %s of size %d from zip file %s" % (member.filename, member.file_size, file))
+                    self.helper.log_warning("process_zipfile: skipping oversized member %s of size %d from zip file %s" % (member.filename, member.file_size, file))
             zf.close()
-            self.helper.log_debug("    - finished extracting zip file %s to %s" % (file,self.tmp_dir))
+            self.helper.log_debug("process_zipfile: finished extracting zip file %s to %s" % (file,self.tmp_dir))
             return members
 
 
@@ -205,7 +205,7 @@ class Dir2Splunk:
         """ Decompress a gz file to tmp_dir, and return a list of the extracted member """
         members = []
         with open(file, 'rb') as f:
-            self.helper.log_debug("    - extracting gz file %s" % file)
+            self.helper.log_debug("process_gzfile: extracting gz file %s" % file)
             data = f.read()
             f.close()
             zobj = zlib.decompressobj(zlib.MAX_WBITS|32)
@@ -213,19 +213,19 @@ class Dir2Splunk:
                 # Protect against gzip bombs by limiting decompression to max_size
                 unz  = zobj.decompress(data, self.max_size)
             except Exception,e:
-                self.helper.log_warning("    - ignoring bad gz file %s because of %s" % (file,e))
+                self.helper.log_warning("process_gzfile: ignoring bad gz file %s because of %s" % (file,e))
             else:
                 if zobj.unconsumed_tail:
                     del data
                     del zobj
                     del unz
-                    self.helper.log_warning("   - decompression exceeded limit")
+                    self.helper.log_warning("process_gzfile: decompression exceeded limit on file %s" % file)
                 else:
                     del data
                     del zobj
                     member = os.path.join(self.tmp_dir,os.path.basename(os.path.splitext(file)[0]))
                     with open(member,"w") as m:
-                        self.helper.log_debug("   - writing to %s" % member)
+                        self.helper.log_debug("process_gzfile: writing to %s" % member)
                         m.write(unz)
                         m.close()
                         del unz
@@ -239,12 +239,12 @@ class Dir2Splunk:
         """
         lines = []
         with open(file, 'r') as f:
-            self.helper.log_debug("    - start parsing xml file %s with do_resolve=%s" % (file, self.do_resolve))
+            self.helper.log_debug("process_xmlfile_to_lines: start parsing xml file %s with do_resolve=%s" % (file, self.do_resolve))
             try:
                 # To protect against various XML threats we use the parse function from defusedxml.ElementTree
                 xmldata = parse(f)
             except Exception, e:
-                 self.helper.log_warning("    - XML parse error in file %s with exception %s" % (file, e))
+                 self.helper.log_warning("process_xmlfile_to_lines: XML parse error in file %s with exception %s" % (file, e))
             else:
                 f.close()
                 lines = self.rua2kv(xmldata)
@@ -299,11 +299,12 @@ class Dir2Splunk:
                     lines = self.process_xmlfile_to_lines(file,1)
                     self.write_event(lines)
                 else:
-                    self.helper.log_debug("Ignoring file %s" % file)
+                    self.helper.log_debug("process_incoming: Ignoring file %s" % file)
                 if self.do_checkpoint:
                     self.save_check_point(file)
         finally:
             self.helper.log_info("Ended processing incoming directory %s" % self.dir)
             remove_tmp_dir(self.helper, self.tmp_dir)
-            self.helper.log_debug("Removed tmp_dir %s" % self.tmp_dir)
+            self.helper.log_debug("process_incoming: removed tmp_dir %s" % self.tmp_dir)
+
 

@@ -15,7 +15,7 @@ Add-on for ingesting DMARC XML aggregate reports into Splunk from an IMAP accoun
 Additional requirements:
 
 * Splunk heavy forwarder instance: Because of Python dependencies Splunk Universal Forwarder is not supported
-* KVstore: used for checkpointing mails-seen-on-IMAP. KVstore is enabled by default on Splunk instances.
+* KVstore: used to keep track of which IMAP messages or local files have already been processed. KVstore is enabled by default on Splunk instances.
 
 ## Install the TA-dmarc add-on for Splunk
 
@@ -39,7 +39,7 @@ The following table lists support for distributed deployment roles in a Splunk d
 |-----------------|-----------|-------------
 | Search head deployer | Yes  | Install this add-on on your search head deployer to enable CIM compliance of DMARC aggregate reports on a Search Head Cluster
 | Cluster Master       | No  | This add-on should be installed on a heavy forwarder that performs parsing at index time. There is no need to install this add-on on an indexer too.
-| Deployment Server    | Yes  | Install this add-on on your Deployment Server to deploy it to search heads and heavy forwarders.
+| Deployment Server    | Depends  | This add-on can be (1) deployed unconfigured to a client or (2) deployed preconfigured with a directory input. Due to the encrypted credentials it cannot be deployed preconfigured for IMAP inputs.
 
 ## Configure inputs for TA-dmarc
 
@@ -53,23 +53,25 @@ The TA-dmarc supports the following input modes:
 ### Directory input
 
 TA-dmarc can watch a folder where you drop DMARC aggregate reports manually or otherwise.
-It will process files with .xml, .zip or .xml.gz extension, ingest them into Splunk, and move them to the done/ directory after succesful processing. Any invalid .xml, .zip or .xml.gz files are moved to the bad/ directory.
+It will read files with .xml, .zip or .xml.gz extention, ingest them into Splunk. Any invalid .xml, .zip or .xml.gz files are ignored. 
+
+TA-dmarc will leave files untouched in the directory: it uses internal checkpointing to skip files that have been previously ingested.
 
 1. Go to the add-on's configuration UI and configure a new modular input by clicking on the "Inputs" menu.
 2. Click "Create new input"
 2. Select "DMARC directory"
 3. Configure:
    * Name: e.g. "production_dmarc_indir"
-   * Interval: how often to poll the directory where DMARC XML aggregate reports are dropped (see below)
+   * Interval: how often to poll the directory where DMARC XML aggregate reports are read from (see below)
    * Index: what Splunk index to send the aggregate reports to
-   * Directory: Location where DMARC aggregate report files are dropped
-   * Quiet time: Ignore files that have a modification time of less than n seconds ago. You can use this to prevent ingesting large files that are dropped on a share but take some time to transfer
-   * Resolve IP: Whether or not to resolve the row source_ip in the DMARC XML aggregate reports
+   * Directory: Location where DMARC aggregate reports should be read from
+   * Quiet time: Ignore files that have a modification time of less than n seconds ago. You can use this to prevent ingesting large files that are dropped on a network share but take some time to transfer
+   * Resolve IP: Whether or not to resolve the raw source_ip in the DMARC XML aggregate reports
 4. Click add
 
 ### IMAP input
 
-TA-dmarc can also fetch DMARC aggregate report attachments from mails on an IMAP server. It will process attachments in .zip or .gz format and ingest them into Splunk.
+TA-dmarc can fetch DMARC aggregate report attachments from mails on an IMAP server. It will process attachments in .xml, .zip or xml.gz format and ingest them into Splunk.
 
 TA-dmarc will leave the mails on the server: it uses internal checkpointing to skip mails that have been previously ingested.
 
@@ -198,9 +200,26 @@ Besides the fields contained in the report, additional fields are mapped from th
 ## Advanced
 
 The DMARC-imap input saves checkpointing data in KVstore.
-To see its contents: `|inputlookup ta_dmarc_checkpointer`
+To see its contents: `|inputlookup ta_dmarc_checkpointer_lookup`
 
-If you want to reindex an entire mailbox, you can do so by deleting the TA-dmarc KVstore checkpointing data through this Splunk command: `|makeresults | outputlookup ta_dmarc_checkpointer`
+If you want to reindex an entire mailbox, you can do so by deleting the TA-dmarc KVstore checkpointing data through this Splunk command: 
+
+```
+|inputlookup ta_dmarc_checkpointer_lookup
+|search state!="*input=dmarc_imap, server=imap.gmail.com*"
+|outputlookup ta_dmarc_checkpointer_lookup`
+```
+
+If you want to reindex a single DMARC report, you can do so by deleting its corresponding record from KVstore:
+
+```
+| inputlookup ta_dmarc_checkpointer_lookup 
+| search state!="*Report-ID: 3596274322387252907*" 
+| outputlookup ta_dmarc_checkpointer_lookup
+```
+
+Reindexing a DMARC report from a directory input is left as an excercise for the reader.
+
 
 ## Third party software credits
 

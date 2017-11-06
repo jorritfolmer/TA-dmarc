@@ -63,7 +63,7 @@ class Imap2Dir:
         except Exception, e:
             raise Exception("Error connecting to %s with exception %s" % (self.opt_imap_server, str(e)))
         else:
-            self.helper.log_debug('Successfully connected to %s' % self.opt_imap_server)
+            self.helper.log_debug('get_imap_connectivity: successfully connected to %s' % self.opt_imap_server)
  
 
     def get_dmarc_messages(self):
@@ -79,11 +79,11 @@ class Imap2Dir:
         except Exception, e:
             raise Exception("Error connecting to %s with exception %s" % (self.opt_imap_server, str(e)))
         else:
-            self.helper.log_debug('Successfully connected to %s' % self.opt_imap_server)
+            self.helper.log_debug('get_dmarc_messages: successfully connected to %s' % self.opt_imap_server)
             self.server.login(self.opt_global_account["username"], self.opt_global_account["password"])
             select_info = self.server.select_folder('INBOX')
             messages = self.server.search('SUBJECT "Report domain:"')
-            self.helper.log_debug('%d messages match subject "Report domain:"' % len(messages))
+            self.helper.log_debug('get_dmarc_messages: %d messages match subject "Report domain:"' % len(messages))
         return messages
 
 
@@ -93,7 +93,7 @@ class Imap2Dir:
             return response
 
 
-    def write_part_to_file(self, part):
+    def write_part_to_file(self, uid, part):
         """ Write the selected message part to file """
         filename = part.get_filename()
         filename = os.path.join(self.tmp_dir, os.path.basename(filename))
@@ -102,7 +102,7 @@ class Imap2Dir:
         except Exception, e:
              raise Exception("Error writing to filename %s with exception %s" % (filename, str(e)))
         else:
-             self.helper.log_debug('    - saved %s' % filename)
+             self.helper.log_debug('write_part_to_file: saved file %s from uid %d' % (filename, uid))
              return filename
 
 
@@ -114,40 +114,46 @@ class Imap2Dir:
         for uid, data in response.items():
             msg = email.message_from_string(data['RFC822'])
             if msg.is_multipart():
-                self.helper.log_debug('    - start multipart processing of msg uid  %d' % uid)
+                self.helper.log_debug('save_reports_from_message_bodies: start multipart processing of msg uid  %d' % uid)
                 for part in msg.get_payload():
                     ctype = part.get_content_type()
                     if ctype == "application/zip":
-                        filename = self.write_part_to_file(part)
+                        filename = self.write_part_to_file(uid, part)
                         filelist.append(filename)
                     elif ctype == "application/gzip":
-                        filename = self.write_part_to_file(part)
+                        filename = self.write_part_to_file(uid, part)
+                        filelist.append(filename)
+                    elif ctype == "application/x-gzip":
+                        filename = self.write_part_to_file(uid, part)
                         filelist.append(filename)
                     elif ctype == "application/xml":
-                        filename = self.write_part_to_file(part)
+                        filename = self.write_part_to_file(uid, part)
                         filelist.append(filename)
                     elif ctype == "text/xml":
-                        filename = self.write_part_to_file(part)
+                        filename = self.write_part_to_file(uid, part)
                         filelist.append(filename)
                     else:
-                        self.helper.log_debug('    - skipping content-type %s of msg uid %d' % (ctype, uid))
+                        self.helper.log_debug('save_reports_from_message_bodies: skipping content-type %s of msg uid %d' % (ctype, uid))
             else:
-                self.helper.log_debug('    - start non-multipart processing of msg uid  %d' % uid)
+                self.helper.log_debug('save_reports_from_message_bodies: start non-multipart processing of msg uid  %d' % uid)
                 ctype = msg.get_content_type()
                 if ctype == "application/zip":
-                    filename = self.write_part_to_file(msg)
+                    filename = self.write_part_to_file(uid, msg)
                     filelist.append(filename)
                 elif ctype == "application/gzip":
-                    filename = self.write_part_to_file(msg)
+                    filename = self.write_part_to_file(uid, msg)
+                    filelist.append(filename)
+                elif ctype == "application/x-gzip":
+                    filename = self.write_part_to_file(uid, msg)
                     filelist.append(filename)
                 elif ctype == "application/xml":
-                    filename = self.write_part_to_file(msg)
+                    filename = self.write_part_to_file(uid, msg)
                     filelist.append(filename)
                 elif ctype == "text/xml":
-                    filename = self.write_part_to_file(msg)
+                    filename = self.write_part_to_file(uid, msg)
                     filelist.append(filename)
                 else:
-                    self.helper.log_debug('    - skipping content-type %s of msg uid %d' % (ctype, uid))
+                    self.helper.log_debug('save_reports_from_message_bodies: skipping content-type %s of msg uid %d' % (ctype, uid))
             # mark msg as seen in KVstore
             self.save_check_point(uid, msg)
         return filelist
