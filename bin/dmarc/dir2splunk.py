@@ -1,7 +1,9 @@
 import os
+import sys
 import time
 import socket
 from defusedxml.ElementTree import parse
+from lxml import etree
 import zipfile
 import zlib
 from collections import OrderedDict
@@ -229,6 +231,7 @@ class Dir2Splunk:
                         members.append(member)
         return members
 
+
     def process_xmlfile_to_lines(self, file):
         """ Processes an XML from from a given directory,
             and return a list of lines in kv format
@@ -243,9 +246,41 @@ class Dir2Splunk:
                 self.helper.log_warning("process_xmlfile_to_lines: XML parse error in file %s with exception %s" % (file, e))
             else:
                 f.close()
+                #FIXME: create checkbox to toggle schema validation
+                #if self.validate_xml(file):
+                #    lines = self.rua2kv(xmldata)
                 lines = self.rua2kv(xmldata)
                 del xmldata
         return lines
+
+
+    def validate_xml(self, file):
+        """ Validate DMARC XML files against the DMARC XML schema definition file (xsd)
+            Return true or false  
+        """
+        xsdfile = os.path.join(sys.path[0], "..", "dmarc", "rua.xsd")
+        try:
+            xmldata = open(file, 'r').read()
+            xsddata = open(xsdfile, 'r').read()
+        except Exception as e:
+            self.helper.log_warning("validate_xml: xsd validation opening with %s" % str(e))
+            return False
+        try:
+            xml = etree.XML(xmldata)
+            xsd = etree.XML(xsddata)
+            xmlschema = etree.XMLSchema(xsd)
+        except Exception as e:
+            self.helper.log_warning("validate_xml: xml parse error for file %s with %s" % (file,str(e)))
+            return False
+        try:
+            xmlschema.assertValid(xml)
+        except Exception as e:
+            self.helper.log_warning("validate_xml: xsd validation failed for file %s with %s" % (file,str(e)))
+            return False
+        else:
+            self.helper.log_debug("validate_xml: xsd validation successful for file %s" % file)
+            return True
+        return False
 
 
     def check_dir(self):
