@@ -58,6 +58,10 @@ class ModInputdmarc_directory(modinput_wrapper.base_modinput.BaseModInput):
                                          description="Resolve the source_ip field in the DMARC XML aggregate report",
                                          required_on_create=False,
                                          required_on_edit=False))
+        scheme.add_argument(smi.Argument("validate_xml", title="Validate XML",
+                                         description="Validate the aggregate report XML against the DMARC XSD. Results are included in the field vendor_rua_xsd_validation.",
+                                         required_on_create=False,
+                                         required_on_edit=False))
         return scheme
 
     def get_app_name(self):
@@ -78,6 +82,7 @@ class ModInputdmarc_directory(modinput_wrapper.base_modinput.BaseModInput):
     def get_checkbox_fields(self):
         checkbox_fields = []
         checkbox_fields.append("resolve_ip")
+        checkbox_fields.append("validate_xml")
         return checkbox_fields
 
     def get_global_checkbox_fields(self):

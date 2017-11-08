@@ -46,15 +46,16 @@ class Dir2Splunk:
     max_size        = 100000000
 
 
-    def __init__(self, ew, helper, dir, quiet_secs, do_resolve, do_checkpoint=False):
+    def __init__(self, ew, helper, dir, quiet_secs, do_resolve, do_validate_xml, do_checkpoint=False):
         # Instance variables:
-        self.helper        = helper
-        self.ew            = ew
-        self.dir           = dir
-        self.quiet_secs    = quiet_secs
-        self.do_resolve    = do_resolve
-        self.do_checkpoint = do_checkpoint
-        self.tmp_dir       = None
+        self.helper          = helper
+        self.ew              = ew
+        self.dir             = dir
+        self.quiet_secs      = quiet_secs
+        self.do_resolve      = do_resolve
+        self.do_checkpoint   = do_checkpoint
+        self.do_validate_xml = do_validate_xml
+        self.tmp_dir         = None
 
 
     def list_incoming(self):
@@ -113,9 +114,9 @@ class Dir2Splunk:
             raise Exception("Error saving checkpoint data with with exception %s" % str(e))
 
 
-    def rua2kv(self, xmldata):
-        """ Returns a string in kv format based on RUA XML input, with
-            optionally resolved IP addresses  
+    def rua2kv(self, xmldata, valid=False):
+        """ Returns a string in kv format based on RUA XML input and its validation status,
+            with optionally resolved IP addresses
         """ 
         mapping_meta = OrderedDict([
             ("report_metadata/org_name"          , "rpt_metadata_org_name"),
@@ -168,7 +169,11 @@ class Dir2Splunk:
                         data += "src=\"%s\",\n" % resolve[0]
                     except Exception:
                         self.helper.log_debug("rua2kv: failed to resolve %s" % field) 
-            result.append("RUA BEGIN\n" + meta + data)
+            if self.do_validate_xml:
+                validstring = "vendor_rua_xsd_validation=\"success\"\n" if valid else "vendor_rua_xsd_validation=\"failure\"\n"
+            else:
+                validstring = "vendor_rua_xsd_validation=\"unknown\"\n"
+            result.append("RUA BEGIN\n" + meta + data + validstring)
         self.helper.log_debug("rua2kv: report_id %s finished parsing" % xmldata.findtext("report_metadata/report_id", default="")) 
         return result
 
@@ -234,7 +239,7 @@ class Dir2Splunk:
 
     def process_xmlfile_to_lines(self, file):
         """ Processes an XML from from a given directory,
-            and return a list of lines in kv format
+            and return a list of string lines in key=value format
         """
         lines = []
         with open(file, 'r') as f:
@@ -246,17 +251,18 @@ class Dir2Splunk:
                 self.helper.log_warning("process_xmlfile_to_lines: XML parse error in file %s with exception %s" % (file, e))
             else:
                 f.close()
-                #FIXME: create checkbox to toggle schema validation
-                #if self.validate_xml(file):
-                #    lines = self.rua2kv(xmldata)
-                lines = self.rua2kv(xmldata)
+                if self.do_validate_xml:
+                    res = self.validate_xml(file)
+                    lines = self.rua2kv(xmldata, res)
+                else:
+                    lines = self.rua2kv(xmldata)
                 del xmldata
         return lines
 
 
     def validate_xml(self, file):
         """ Validate DMARC XML files against the DMARC XML schema definition file (xsd)
-            Return true or false  
+            Returns true or false  
         """
         xsdfile = os.path.join(sys.path[0], "..", "dmarc", "rua.xsd")
         try:

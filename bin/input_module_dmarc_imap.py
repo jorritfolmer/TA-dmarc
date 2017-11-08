@@ -32,6 +32,7 @@ def collect_events(helper, ew):
     opt_use_ssl        = True
     opt_global_account = helper.get_arg('global_account')
     opt_resolve_ip     = helper.get_arg('resolve_ip')
+    opt_validate_xml   = helper.get_arg('validate_xml')
 
     loglevel   = helper.get_log_level()
     helper.set_log_level(loglevel)
@@ -41,7 +42,7 @@ def collect_events(helper, ew):
     try:
         filelist = i2d.process_incoming()
         if len(filelist)>0:
-            d2s = Dir2Splunk(ew, helper, tmp_dir, 0, opt_resolve_ip)
+            d2s = Dir2Splunk(ew, helper, tmp_dir, 0, opt_resolve_ip, opt_validate_xml, False)
             if d2s.check_dir():
                 d2s.process_incoming()
     finally:

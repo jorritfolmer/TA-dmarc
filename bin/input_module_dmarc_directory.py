@@ -15,13 +15,14 @@ def validate_input(helper, definition):
     opt_dmarc_directory = definition.parameters.get('dmarc_directory', None)
     opt_quiet_time      = definition.parameters.get('quiet_time', None)
     opt_resolve_ip      = definition.parameters.get('resolve_ip', None)
+    opt_validate_xml    = definition.parameters.get('validate_xml', None)
 
     try:
         int(opt_quiet_time)   
     except Exception:
         raise ValueError("Error: quiet_time not an integer")
 
-    d2s = Dir2Splunk(None, helper, opt_dmarc_directory, opt_quiet_time, opt_resolve_ip)
+    d2s = Dir2Splunk(None, helper, opt_dmarc_directory, opt_quiet_time, opt_resolve_ip, opt_validate_xml)
     d2s.check_dir()
 
 
@@ -31,11 +32,12 @@ def collect_events(helper, ew):
     opt_dmarc_directory = helper.get_arg('dmarc_directory')
     opt_quiet_time      = int(helper.get_arg('quiet_time'))
     opt_resolve_ip      = helper.get_arg('resolve_ip')
+    opt_validate_xml    = helper.get_arg('validate_xml')
 
     loglevel   = helper.get_log_level()
     helper.set_log_level(loglevel)
 
-    d2s = Dir2Splunk(ew, helper, opt_dmarc_directory, opt_quiet_time, opt_resolve_ip, True)
+    d2s = Dir2Splunk(ew, helper, opt_dmarc_directory, opt_quiet_time, opt_resolve_ip, opt_validate_xml, True)
     if d2s.check_dir():
         d2s.process_incoming()
 

@@ -107,6 +107,13 @@ Mitigations are in place against:
 * gzip bombs
 * various XML attack vectors like billion laughs, quadratic blowup, external entity expansion and so on
 
+### Validate XML setting
+
+Additionally, the DMARC XML aggregate reports can be validated against the DMARC RUA XML schema definition (XSD).
+This can be configured in the input with the checkbox "Validate XML"
+The result of the validation is added as a new event field in Splunk `vendor_vendor_rua_xsd_validation`.
+In practice however this validation is too strict to start rejecting aggregate reports, because real ones from Google or Splunk fail XSD validation regularly because of non-standard fields.
+
 ### Field mapping
 
 From the XML sample below, these fields are created:
@@ -228,6 +235,10 @@ The following software components are used in this add-on:
 1. [defusedxml](https://pypi.python.org/pypi/defusedxml/0.5.0) version 0.5.0 by Christian Heimes
 2. [IMAPClient](https://github.com/mjs/imapclient) version 1.0.2 by Menno Finlay-Smits
 2. [Splunk Add-on Builder](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Overview) version 2.2.0 by Splunk and the [third-party software](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Thirdpartysoftwarecredits) it uses
+
+## CHANGELOG
+
+See CHANGELOG.md
 
 ## Support
 

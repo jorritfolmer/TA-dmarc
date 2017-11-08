@@ -60,6 +60,13 @@ fields = [
         default=True,
         validator=None
     ), 
+    field.RestField(
+        'validate_xml',
+        required=False,
+        encrypted=False,
+        default=True,
+        validator=None
+    ), 
 
     field.RestField(
         'disabled',

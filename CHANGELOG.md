@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.0
+
+- Added DMARC XML validation against DMARC XSD:
+  New checkbox added to the input configure screens.
+  Appends a new event field: vendor_rua_xsd_validation = (success|failure|unknown)
+- Removed forgotten use_ssl input parameter from inputs.conf.spec
+
 ## 2.0.0
 
 Improved checkpointing:
@@ -13,6 +20,8 @@ Addressed concerns from Splunk Cert Admin:
 - ensure tmp directories are always cleaned up, by using try finally for both directory and imap inputs
 - ensure the add-on won't write outside of splunk designated directories by implementing KVstore checkpointing for DMARC directory inputs instead of using file ops to bad/, done/ or tmp/ dirs.
 
+NOTES BEFORE UPGRADING FROM v1.x TO 2.0.0:
+Because of the changes to KVstore logic, the add-on will re-index every report on IMAP, leading to duplicate events.
 
 ## 1.2.1
 

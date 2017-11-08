@@ -1,13 +1,223 @@
 {
     "meta": {
-        "version": "1.0.0", 
         "restRoot": "TA_dmarc", 
-        "name": "TA-dmarc", 
+        "version": "2.1.0", 
         "displayName": "TA-dmarc", 
+        "name": "TA-dmarc", 
         "apiVersion": "3.0.0"
     }, 
     "pages": {
         "inputs": {
+            "services": [
+                {
+                    "entity": [
+                        {
+                            "field": "name", 
+                            "help": "Enter a unique name for the data input", 
+                            "validators": [
+                                {
+                                    "pattern": "^[a-zA-Z]\\w*$", 
+                                    "type": "regex", 
+                                    "errorMsg": "Input Name must start with a letter and followed by alphabetic letters, digits or underscores."
+                                }, 
+                                {
+                                    "errorMsg": "Length of input name should be between 1 and 100", 
+                                    "minLength": 1, 
+                                    "type": "string", 
+                                    "maxLength": 100
+                                }
+                            ], 
+                            "required": true, 
+                            "type": "text", 
+                            "label": "Name"
+                        }, 
+                        {
+                            "field": "interval", 
+                            "help": "Time interval of input in seconds.", 
+                            "validators": [
+                                {
+                                    "pattern": "^\\-[1-9]\\d*$|^\\d*$", 
+                                    "type": "regex", 
+                                    "errorMsg": "Interval must be an integer."
+                                }
+                            ], 
+                            "required": true, 
+                            "type": "text", 
+                            "label": "Interval"
+                        }, 
+                        {
+                            "field": "index", 
+                            "defaultValue": "default", 
+                            "options": {
+                                "blackList": "^_.*$", 
+                                "createSearchChoice": true, 
+                                "endpointUrl": "data/indexes"
+                            }, 
+                            "validators": [
+                                {
+                                    "errorMsg": "Length of index name should be between 1 and 80.", 
+                                    "minLength": 1, 
+                                    "type": "string", 
+                                    "maxLength": 80
+                                }
+                            ], 
+                            "required": true, 
+                            "type": "singleSelect", 
+                            "label": "Index"
+                        }, 
+                        {
+                            "field": "global_account", 
+                            "options": {
+                                "referenceName": "account"
+                            }, 
+                            "label": "Global Account", 
+                            "required": true, 
+                            "type": "singleSelect", 
+                            "help": "Use the account configured in the setup tab"
+                        }, 
+                        {
+                            "field": "imap_server", 
+                            "help": "Connect to the specified IMAP server with TLS (port 993)", 
+                            "validators": [
+                                {
+                                    "errorMsg": "Max length of text input is 8192", 
+                                    "minLength": 0, 
+                                    "type": "string", 
+                                    "maxLength": 8192
+                                }
+                            ], 
+                            "required": true, 
+                            "type": "text", 
+                            "label": "IMAP server"
+                        }, 
+                        {
+                            "field": "resolve_ip", 
+                            "defaultValue": true, 
+                            "help": "Resolve the source_ip field in the DMARC aggregate reports.", 
+                            "required": false, 
+                            "type": "checkbox", 
+                            "label": "Resolve IP"
+                        }, 
+                        {
+                            "field": "validate_xml", 
+                            "defaultValue": true, 
+                            "help": "Validate the aggregate reports against the DMARC XSD. Results are included in the field vendor_rua_xsd_validation.", 
+                            "required": false, 
+                            "type": "checkbox", 
+                            "label": "Validate XML"
+                        }
+                    ], 
+                    "name": "dmarc_imap", 
+                    "title": "DMARC mailbox"
+                }, 
+                {
+                    "entity": [
+                        {
+                            "field": "name", 
+                            "help": "Enter a unique name for the data input", 
+                            "validators": [
+                                {
+                                    "pattern": "^[a-zA-Z]\\w*$", 
+                                    "type": "regex", 
+                                    "errorMsg": "Input Name must start with a letter and followed by alphabetic letters, digits or underscores."
+                                }, 
+                                {
+                                    "errorMsg": "Length of input name should be between 1 and 100", 
+                                    "minLength": 1, 
+                                    "type": "string", 
+                                    "maxLength": 100
+                                }
+                            ], 
+                            "required": true, 
+                            "type": "text", 
+                            "label": "Name"
+                        }, 
+                        {
+                            "field": "interval", 
+                            "help": "Time interval of input in seconds.", 
+                            "validators": [
+                                {
+                                    "pattern": "^\\-[1-9]\\d*$|^\\d*$", 
+                                    "type": "regex", 
+                                    "errorMsg": "Interval must be an integer."
+                                }
+                            ], 
+                            "required": true, 
+                            "type": "text", 
+                            "label": "Interval"
+                        }, 
+                        {
+                            "field": "index", 
+                            "defaultValue": "default", 
+                            "options": {
+                                "blackList": "^_.*$", 
+                                "createSearchChoice": true, 
+                                "endpointUrl": "data/indexes"
+                            }, 
+                            "validators": [
+                                {
+                                    "errorMsg": "Length of index name should be between 1 and 80.", 
+                                    "minLength": 1, 
+                                    "type": "string", 
+                                    "maxLength": 80
+                                }
+                            ], 
+                            "required": true, 
+                            "type": "singleSelect", 
+                            "label": "Index"
+                        }, 
+                        {
+                            "field": "dmarc_directory", 
+                            "help": "Location where DMARC aggregate report files are dropped", 
+                            "validators": [
+                                {
+                                    "errorMsg": "Max length of text input is 8192", 
+                                    "minLength": 0, 
+                                    "type": "string", 
+                                    "maxLength": 8192
+                                }
+                            ], 
+                            "required": true, 
+                            "type": "text", 
+                            "label": "Directory"
+                        }, 
+                        {
+                            "field": "quiet_time", 
+                            "defaultValue": "30", 
+                            "help": "Ignore files that have a modification time of less than n seconds ago.", 
+                            "validators": [
+                                {
+                                    "errorMsg": "Max length of text input is 8192", 
+                                    "minLength": 0, 
+                                    "type": "string", 
+                                    "maxLength": 8192
+                                }
+                            ], 
+                            "required": true, 
+                            "type": "text", 
+                            "label": "Quiet time"
+                        }, 
+                        {
+                            "field": "resolve_ip", 
+                            "defaultValue": true, 
+                            "help": "Resolve the source_ip field in the DMARC XML aggregate report", 
+                            "required": false, 
+                            "type": "checkbox", 
+                            "label": "Resolve IP"
+                        }, 
+                        {
+                            "field": "validate_xml", 
+                            "defaultValue": true, 
+                            "help": "Validate the aggregate report XML against the DMARC XSD. Results are included in the field vendor_rua_xsd_validation.", 
+                            "required": false, 
+                            "type": "checkbox", 
+                            "label": "Validate XML"
+                        }
+                    ], 
+                    "name": "dmarc_directory", 
+                    "title": "DMARC directory"
+                }
+            ], 
             "table": {
                 "header": [
                     {
@@ -45,24 +255,28 @@
                         "label": "Status"
                     }, 
                     {
-                        "field": "dmarc_directory", 
-                        "label": "Directory"
-                    }, 
-                    {
-                        "field": "quiet_time", 
-                        "label": "Quiet time"
-                    }, 
-                    {
-                        "field": "resolve_ip", 
-                        "label": "Resolve IP"
-                    }, 
-                    {
                         "field": "global_account", 
                         "label": "Global Account"
                     }, 
                     {
                         "field": "imap_server", 
                         "label": "IMAP server"
+                    }, 
+                    {
+                        "field": "resolve_ip", 
+                        "label": "Resolve IP"
+                    }, 
+                    {
+                        "field": "validate_xml", 
+                        "label": "Validate XML"
+                    }, 
+                    {
+                        "field": "dmarc_directory", 
+                        "label": "Directory"
+                    }, 
+                    {
+                        "field": "quiet_time", 
+                        "label": "Quiet time"
                     }
                 ], 
                 "actions": [
@@ -72,200 +286,6 @@
                     "clone"
                 ]
             }, 
-            "services": [
-                {
-                    "name": "dmarc_directory", 
-                    "entity": [
-                        {
-                            "field": "name", 
-                            "help": "Enter a unique name for the data input", 
-                            "validators": [
-                                {
-                                    "pattern": "^[a-zA-Z]\\w*$", 
-                                    "errorMsg": "Input Name must start with a letter and followed by alphabetic letters, digits or underscores.", 
-                                    "type": "regex"
-                                }, 
-                                {
-                                    "minLength": 1, 
-                                    "errorMsg": "Length of input name should be between 1 and 100", 
-                                    "type": "string", 
-                                    "maxLength": 100
-                                }
-                            ], 
-                            "required": true, 
-                            "type": "text", 
-                            "label": "Name"
-                        }, 
-                        {
-                            "field": "interval", 
-                            "help": "Time interval of input in seconds.", 
-                            "validators": [
-                                {
-                                    "pattern": "^\\-[1-9]\\d*$|^\\d*$", 
-                                    "errorMsg": "Interval must be an integer.", 
-                                    "type": "regex"
-                                }
-                            ], 
-                            "required": true, 
-                            "type": "text", 
-                            "label": "Interval"
-                        }, 
-                        {
-                            "field": "index", 
-                            "defaultValue": "default", 
-                            "options": {
-                                "blackList": "^_.*$", 
-                                "createSearchChoice": true, 
-                                "endpointUrl": "data/indexes"
-                            }, 
-                            "validators": [
-                                {
-                                    "minLength": 1, 
-                                    "errorMsg": "Length of index name should be between 1 and 80.", 
-                                    "type": "string", 
-                                    "maxLength": 80
-                                }
-                            ], 
-                            "required": true, 
-                            "type": "singleSelect", 
-                            "label": "Index"
-                        }, 
-                        {
-                            "field": "dmarc_directory", 
-                            "help": "Location where DMARC aggregate report files are dropped", 
-                            "validators": [
-                                {
-                                    "minLength": 0, 
-                                    "errorMsg": "Max length of text input is 8192", 
-                                    "type": "string", 
-                                    "maxLength": 8192
-                                }
-                            ], 
-                            "required": true, 
-                            "type": "text", 
-                            "label": "Directory"
-                        }, 
-                        {
-                            "field": "quiet_time", 
-                            "defaultValue": "30", 
-                            "help": "Ignore files that have a modification time of less than n seconds ago.", 
-                            "validators": [
-                                {
-                                    "minLength": 0, 
-                                    "errorMsg": "Max length of text input is 8192", 
-                                    "type": "string", 
-                                    "maxLength": 8192
-                                }
-                            ], 
-                            "required": true, 
-                            "type": "text", 
-                            "label": "Quiet time"
-                        }, 
-                        {
-                            "field": "resolve_ip", 
-                            "defaultValue": true, 
-                            "help": "Resolve the source_ip field in the DMARC XML aggregate report", 
-                            "required": false, 
-                            "type": "checkbox", 
-                            "label": "Resolve IP"
-                        }
-                    ], 
-                    "title": "DMARC directory"
-                }, 
-                {
-                    "name": "dmarc_imap", 
-                    "entity": [
-                        {
-                            "field": "name", 
-                            "help": "Enter a unique name for the data input", 
-                            "validators": [
-                                {
-                                    "pattern": "^[a-zA-Z]\\w*$", 
-                                    "errorMsg": "Input Name must start with a letter and followed by alphabetic letters, digits or underscores.", 
-                                    "type": "regex"
-                                }, 
-                                {
-                                    "minLength": 1, 
-                                    "errorMsg": "Length of input name should be between 1 and 100", 
-                                    "type": "string", 
-                                    "maxLength": 100
-                                }
-                            ], 
-                            "required": true, 
-                            "type": "text", 
-                            "label": "Name"
-                        }, 
-                        {
-                            "field": "interval", 
-                            "help": "Time interval of input in seconds.", 
-                            "validators": [
-                                {
-                                    "pattern": "^\\-[1-9]\\d*$|^\\d*$", 
-                                    "errorMsg": "Interval must be an integer.", 
-                                    "type": "regex"
-                                }
-                            ], 
-                            "required": true, 
-                            "type": "text", 
-                            "label": "Interval"
-                        }, 
-                        {
-                            "field": "index", 
-                            "defaultValue": "default", 
-                            "options": {
-                                "blackList": "^_.*$", 
-                                "createSearchChoice": true, 
-                                "endpointUrl": "data/indexes"
-                            }, 
-                            "validators": [
-                                {
-                                    "minLength": 1, 
-                                    "errorMsg": "Length of index name should be between 1 and 80.", 
-                                    "type": "string", 
-                                    "maxLength": 80
-                                }
-                            ], 
-                            "required": true, 
-                            "type": "singleSelect", 
-                            "label": "Index"
-                        }, 
-                        {
-                            "field": "global_account", 
-                            "options": {
-                                "referenceName": "account"
-                            }, 
-                            "help": "Use the account configured in the setup tab", 
-                            "required": true, 
-                            "type": "singleSelect", 
-                            "label": "Global Account"
-                        }, 
-                        {
-                            "field": "imap_server", 
-                            "help": "Connect to the specified IMAP server with TLS (port 993)", 
-                            "validators": [
-                                {
-                                    "minLength": 0, 
-                                    "errorMsg": "Max length of text input is 8192", 
-                                    "type": "string", 
-                                    "maxLength": 8192
-                                }
-                            ], 
-                            "required": true, 
-                            "type": "text", 
-                            "label": "IMAP server"
-                        }, 
-                        {
-                            "field": "resolve_ip", 
-                            "defaultValue": true, 
-                            "help": "Resolve the source_ip field in the DMARC aggregate reports.", 
-                            "required": false, 
-                            "type": "checkbox", 
-                            "label": "Resolve IP"
-                        }
-                    ], 
-                    "title": "DMARC mailbox"
-                }
-            ], 
             "description": "Manage your data inputs", 
             "title": "Inputs"
         }, 
@@ -289,22 +309,21 @@
                             "clone"
                         ]
                     }, 
-                    "name": "account", 
                     "entity": [
                         {
                             "field": "name", 
                             "help": "Enter a unique name for this account.", 
                             "validators": [
                                 {
-                                    "minLength": 1, 
                                     "errorMsg": "Length of Account name should be between 1 and 50", 
+                                    "minLength": 1, 
                                     "type": "string", 
                                     "maxLength": 50
                                 }, 
                                 {
                                     "pattern": "^[a-zA-Z]\\w*$", 
-                                    "errorMsg": "Account name must start with a letter and followed by alphabetic letters, digits or underscores.", 
-                                    "type": "regex"
+                                    "type": "regex", 
+                                    "errorMsg": "Account name must start with a letter and followed by alphabetic letters, digits or underscores."
                                 }
                             ], 
                             "required": true, 
@@ -316,26 +335,26 @@
                             "options": {
                                 "placeholder": "Enter the username here"
                             }, 
+                            "label": "Username", 
                             "validators": [
                                 {
-                                    "minLength": 1, 
                                     "errorMsg": "Length of username should be between 1 and 200", 
+                                    "minLength": 1, 
                                     "type": "string", 
                                     "maxLength": 200
                                 }
                             ], 
-                            "help": "Enter the username for this account.", 
                             "required": true, 
                             "type": "text", 
-                            "label": "Username"
+                            "help": "Enter the username for this account."
                         }, 
                         {
                             "field": "password", 
                             "help": "Enter the password for this account.", 
                             "validators": [
                                 {
-                                    "minLength": 1, 
                                     "errorMsg": "Length of password should be between 1 and 8192", 
+                                    "minLength": 1, 
                                     "type": "string", 
                                     "maxLength": 8192
                                 }
@@ -346,43 +365,44 @@
                             "label": "Password"
                         }
                     ], 
+                    "name": "account", 
                     "title": "Account"
                 }, 
                 {
-                    "name": "logging", 
                     "entity": [
                         {
                             "field": "loglevel", 
                             "defaultValue": "INFO", 
+                            "type": "singleSelect", 
                             "options": {
                                 "autoCompleteFields": [
                                     {
-                                        "label": "DEBUG", 
-                                        "value": "DEBUG"
+                                        "value": "DEBUG", 
+                                        "label": "DEBUG"
                                     }, 
                                     {
-                                        "label": "INFO", 
-                                        "value": "INFO"
+                                        "value": "INFO", 
+                                        "label": "INFO"
                                     }, 
                                     {
-                                        "label": "WARNING", 
-                                        "value": "WARNING"
+                                        "value": "WARNING", 
+                                        "label": "WARNING"
                                     }, 
                                     {
-                                        "label": "ERROR", 
-                                        "value": "ERROR"
+                                        "value": "ERROR", 
+                                        "label": "ERROR"
                                     }, 
                                     {
-                                        "label": "CRITICAL", 
-                                        "value": "CRITICAL"
+                                        "value": "CRITICAL", 
+                                        "label": "CRITICAL"
                                     }
                                 ], 
                                 "disableSearch": true
                             }, 
-                            "type": "singleSelect", 
                             "label": "Log level"
                         }
                     ], 
+                    "name": "logging", 
                     "title": "Logging"
                 }
             ], 
