@@ -112,7 +112,7 @@ Mitigations are in place against:
 Additionally, the DMARC XML aggregate reports can be validated against the DMARC RUA XML schema definition (XSD).
 This can be configured in the input with the checkbox "Validate XML"
 The result of the validation is added as a new event field in Splunk `vendor_vendor_rua_xsd_validation`.
-In practice however this validation is too strict to start rejecting aggregate reports, because real ones from Google or Splunk fail XSD validation regularly because of non-standard fields.
+In practice this validation is too strict to start rejecting aggregate reports, because real ones from Google or Splunk fail XSD validation regularly because of non-standard fields.
 
 ### Field mapping
 

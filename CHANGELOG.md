@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.1
+
+- Fixed reading reports with absolute paths from zip files
+  (Thanks to Steve Myers for the bug report)
+
 ## 2.1.0
 
 - Added DMARC XML validation against DMARC XSD:

@@ -192,11 +192,11 @@ class Dir2Splunk:
             self.helper.log_debug("process_zipfile: extracting zip file %s to %s" % (file, self.tmp_dir))
             for member in zf.infolist():
                 self.helper.log_debug("process_zipfile: contains %s of size %d (zip file %s)" % (member.filename, member.file_size, file))
-                # To protect against ZIP bombs we only include members smaller than 100MB:
-                if member.file_size < self.max_size:
-                    zf.extract(member.filename,self.tmp_dir)
-                    if os.path.splitext(member.filename)[1] == ".xml":
-                        members.append(os.path.join(self.tmp_dir, member.filename))
+                # To protect against ZIP bombs we only include XML members smaller than 100MB:
+                if member.file_size < self.max_size and os.path.splitext(member.filename)[1] == ".xml":
+                    extractedfile = zf.extract(member.filename,self.tmp_dir)
+                    members.append(os.path.join(self.tmp_dir, extractedfile))
+                    self.helper.log_debug("process_zipfile: extracted %s as %s" % (member.filename, extractedfile))
                 else:
                     self.helper.log_warning("process_zipfile: skipping oversized member %s of size %d from zip file %s" % (member.filename, member.file_size, file))
             zf.close()
