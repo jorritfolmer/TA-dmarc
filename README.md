@@ -206,6 +206,8 @@ Besides the fields contained in the report, additional fields are mapped from th
 
 ## Advanced
 
+### Checkpointing
+
 The DMARC-imap input saves checkpointing data in KVstore.
 To see its contents: `|inputlookup ta_dmarc_checkpointer_lookup`
 
@@ -227,6 +229,19 @@ If you want to reindex a single DMARC report, you can do so by deleting its corr
 
 Reindexing a DMARC report from a directory input is left as an excercise for the reader.
 
+### Supported mimetypes for aggregate report attachments
+
+Attachments with the following mime-types will be processed:
+
+- application/zip
+- application/gzip
+- application/x-gzip
+- application/xml
+- text/xml
+- application-x-gzip (Non-standard mimetype used by Comcast dmarc reports)
+- application/x-zip-compressed (Non-standard mimetype used by Yahoo dmarc reports)
+
+Submit an issue in the issuetracker if you encounter other mimetypes in the wild that should be on this list, even though they're non-standard.
 
 ## Third party software credits
 

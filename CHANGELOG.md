@@ -1,9 +1,14 @@
 # Changelog
 
+## 2.2.0
+
+- Added non-standard mimetypes used by Verizon and Yahoo to the dmarc reports attachment filter
+  (Thanks to John for reporting this issue)
+
 ## 2.1.1
 
 - Fixed reading reports with absolute paths from zip files
-  (Thanks to Steve Myers for the bug report)
+  (Thanks to Steve Myers for reporting this issue)
 
 ## 2.1.0
 

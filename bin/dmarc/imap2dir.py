@@ -97,6 +97,8 @@ class Imap2Dir:
             return filename
 
 
+     
+
     def save_reports_from_message_bodies(self, response):
         """ Find zip and gzip attachments in the response, and write them to disk 
             Return a list of filenames that were written
@@ -108,39 +110,13 @@ class Imap2Dir:
                 self.helper.log_debug('save_reports_from_message_bodies: start multipart processing of msg uid  %d' % uid)
                 for part in msg.get_payload():
                     ctype = part.get_content_type()
-                    if ctype == "application/zip":
+                    if self.check_eligible_mimetype(ctype, uid):
                         filename = self.write_part_to_file(uid, part)
                         filelist.append(filename)
-                    elif ctype == "application/gzip":
-                        filename = self.write_part_to_file(uid, part)
-                        filelist.append(filename)
-                    elif ctype == "application/x-gzip":
-                        filename = self.write_part_to_file(uid, part)
-                        filelist.append(filename)
-                    elif ctype == "application/xml":
-                        filename = self.write_part_to_file(uid, part)
-                        filelist.append(filename)
-                    elif ctype == "text/xml":
-                        filename = self.write_part_to_file(uid, part)
-                        filelist.append(filename)
-                    else:
-                        self.helper.log_debug('save_reports_from_message_bodies: skipping content-type %s of msg uid %d' % (ctype, uid))
             else:
                 self.helper.log_debug('save_reports_from_message_bodies: start non-multipart processing of msg uid  %d' % uid)
                 ctype = msg.get_content_type()
-                if ctype == "application/zip":
-                    filename = self.write_part_to_file(uid, msg)
-                    filelist.append(filename)
-                elif ctype == "application/gzip":
-                    filename = self.write_part_to_file(uid, msg)
-                    filelist.append(filename)
-                elif ctype == "application/x-gzip":
-                    filename = self.write_part_to_file(uid, msg)
-                    filelist.append(filename)
-                elif ctype == "application/xml":
-                    filename = self.write_part_to_file(uid, msg)
-                    filelist.append(filename)
-                elif ctype == "text/xml":
+                if self.check_eligible_mimetype(ctype, uid):
                     filename = self.write_part_to_file(uid, msg)
                     filelist.append(filename)
                 else:
@@ -149,7 +125,35 @@ class Imap2Dir:
             self.save_check_point(uid, msg)
         return filelist
 
+
+    def check_eligible_mimetype(self, ctype, uid):
+        """ Check if a given mimetype is eligible for further processing
+            Returns true of false
+        """
+        self.helper.log_debug('check_eligible_mimtype: checking content-type %s of msg uid %d' % (ctype, uid))
+        if ctype == "application/zip":
+            return True
+        elif ctype == "application/gzip":
+            return True
+        elif ctype == "application/x-gzip":
+            return True
+        elif ctype == "application-x-gzip":
+            # Non-standard mimetype used by Comcast dmarc reports
+            return True
+        elif ctype == "application/x-zip-compressed":
+            # Non-standard mimetype used by Yahoo dmarc reports
+            return True
+        elif ctype == "application/xml":
+            return True
+        elif ctype == "text/xml":
+            return True
+        else:
+            self.helper.log_debug('check_eligible_mimtype: skipping content-type %s of msg uid %d' % (ctype, uid))
+            return False
+
+
     def save_check_point(self, uid, msg):
+        """ Save checkpointing info for a given uid and msg struct """
         key = "%s_%s_%d" % (self.opt_imap_server, self.opt_global_account["username"], uid)
         date = email.utils.mktime_tz(email.utils.parsedate_tz(msg.get('Date')))
         value = "input=dmarc_imap, server=%s, username=%s, uid=%d, timestamp_utc=%d, subject='%s'" % (self.opt_imap_server, self.opt_global_account["username"], uid, date, msg.get('Subject'))
