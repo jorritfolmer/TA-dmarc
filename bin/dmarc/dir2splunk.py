@@ -48,7 +48,7 @@ class Dir2Splunk:
     # Class variables:
     max_size        = 100000000
 
-    def __init__(self, ew, helper, dir, quiet_secs, do_resolve, do_validate_xml, output_format, do_checkpoint=False):
+    def __init__(self, ew, helper, dir, quiet_secs, do_resolve, do_validate_xml, do_checkpoint=False):
         # Instance variables:
         self.helper          = helper
         self.ew              = ew
@@ -57,7 +57,6 @@ class Dir2Splunk:
         self.do_resolve      = do_resolve
         self.do_checkpoint   = do_checkpoint
         self.do_validate_xml = do_validate_xml
-        self.output_format   = output_format
         self.tmp_dir         = None
 
     def list_incoming(self):
@@ -127,7 +126,6 @@ class Dir2Splunk:
             ("policy_published/adkim"            , "policy_published_adkim"),
             ("policy_published/aspf"             , "policy_published_aspf"),
             ("policy_published/p"                , "policy_published_p"),
-            ("policy_published/sp"               , "policy_published_sp"),
             ("policy_published/pct"              , "policy_published_pct"),
             ("policy_published/rf"               , "policy_published_rf"),
             ("policy_published/ri"               , "policy_published_ri"),
@@ -141,12 +139,9 @@ class Dir2Splunk:
             ("row/policy_evaluated/disposition"  , "row_policy_evaluated_disposition"),
             ("row/policy_evaluated/dkim"         , "row_policy_evaluated_dkim"),
             ("row/policy_evaluated/spf"          , "row_policy_evaluated_spf"),
-            ("row/policy_evaluated/reason"       , "row_policy_evaluated_reason"),
             ("identifiers/header_from"           , "identifiers_header_from"),
-            ("identifiers/envelope_to"           , "identifiers_envelope_to"),
             ("auth_results/dkim/domain"          , "auth_result_dkim_domain"),
             ("auth_results/dkim/result"          , "auth_result_dkim_result"),
-            ("auth_results/dkim/human_result"    , "auth_result_dkim_human_result"),
             ("auth_results/spf/domain"           , "auth_result_spf_domain"),
             ("auth_results/spf/result"           , "auth_result_spf_result"),
         ])
@@ -182,9 +177,10 @@ class Dir2Splunk:
                               % xmldata.findtext("report_metadata/report_id", default=""))
         return result
 
-    def rua2json(self, xmldata, validation_result=False):
+    def rua2json(self, xmldata, valid=False):
         """ Returns a string in JSON format based on RUA XML input and its validation status,
             with optionally resolved IP addresses. Resolved checks are validated somewhat.
+            Should DKIM authentication results with fake domains be returned (AOL)?
         """
 
         result = []
@@ -200,7 +196,6 @@ class Dir2Splunk:
         for record in records:
             data_ip = record.findtext('row/source_ip')
             row_tag = record.find("row")
-            xsd_validation = ''
             if self.do_resolve:
                 try:
                     self.helper.log_debug("rua2json: resolving %s" % data_ip)
@@ -212,17 +207,17 @@ class Dir2Splunk:
                 except Exception:
                     self.helper.log_debug("rua2json: failed to resolve %s" % data_ip)
             if self.do_validate_xml:
-                if validation_result == True:
-                    xsd_validation = ", \"vendor_rua_xsd_validation\": \"success\""
+                xsd_validation = etree.SubElement(row_tag, "rua_xsd_validation")
+                if valid:
+                    xsd_validation.text = "success"
                 else:
-                    xsd_validation = ", \"vendor_rua_xsd_validation\": \"failure\", \"vendor_rua_xsd_validation_error\": \"" + validation_result + "\""
+                    xsd_validation.text = "failure"
             data = dumps(yahoo.data(record))
-            # Aggregate report metadata, policy, record and xsd_validation field
-            result.append("{\"feedback\": [" + metadata + "," + policy + "," + data + "]" + xsd_validation + "}\n")
+            # Aggregate report metadata, policy, and record
+            result.append("{\"feedback\": [" + metadata + "," + policy + "," + data + "]}\n")
         self.helper.log_debug("rua2json: report_id %s finished parsing"
                               % xmldata.findtext("report_metadata/report_id", default=""))
         return result
-
 
     def process_zipfile(self, file):
         """ Unzip a given zip file to tmp_dir,
@@ -331,43 +326,29 @@ class Dir2Splunk:
                 del xmldata
         return lines
 
-
-    def process_xmlfile(self, file):    
-        """ Wrapper function to process an XML file based on self.output_format """
-        lines = []
-        if self.output_format == "kv":
-            lines = self.process_xmlfile_to_lines(file)
-        elif self.output_format == "json":
-            lines = self.process_xmlfile_to_json_lines(file)
-        return lines
-
-
     def validate_xml(self, file):
         """ Validate DMARC XML files against the DMARC XML schema definition file (xsd)
-            Returns True or an escaped exception string
+            Returns true or false
         """
-        xsdfile = os.path.join(sys.path[0], "..", "dmarc", "rua_relaxed.xsd")
+        xsdfile = os.path.join(sys.path[0], "..", "dmarc", "rua.xsd")
         try:
             xmldata = open(file, 'r').read()
             xsddata = open(xsdfile, 'r').read()
         except Exception as e:
             self.helper.log_warning("validate_xml: xsd validation opening with %s" % str(e))
-            res = str(e).replace('"', '\\"').replace('\n', '\\n')
-            return res
+            return False
         try:
             xml = etree.XML(xmldata)
             xsd = etree.XML(xsddata)
             xmlschema = etree.XMLSchema(xsd)
         except Exception as e:
             self.helper.log_warning("validate_xml: xml parse error for file %s with %s" % (file, str(e)))
-            res = str(e).replace('"', '\\"').replace('\n', '\\n')
-            return res
+            return False
         try:
             xmlschema.assertValid(xml)
         except Exception as e:
             self.helper.log_warning("validate_xml: xsd validation failed for file %s with %s" % (file, str(e)))
-            res = str(e).replace('"', '\\"').replace('\n', '\\n')
-            return res
+            return False
         else:
             self.helper.log_debug("validate_xml: xsd validation successful for file %s" % file)
             return True
@@ -407,16 +388,16 @@ class Dir2Splunk:
                 if ext == ".zip":
                     self.helper.log_info("Start processing zip file %s" % file)
                     for xmlfile in self.process_zipfile(file):
-                        lines = self.process_xmlfile(xmlfile)
+                        lines = self.process_xmlfile_to_lines(xmlfile)
                         self.write_event(lines)
                 elif ext == ".gz":
                     self.helper.log_info("Start processing gz file %s" % file)
                     for xmlfile in self.process_gzfile(file):
-                        lines = self.process_xmlfile(xmlfile)
+                        lines = self.process_xmlfile_to_lines(xmlfile)
                         self.write_event(lines)
                 elif ext == ".xml":
                     self.helper.log_info("Start processing xml file %s" % file)
-                    lines = self.process_xmlfile(file)
+                    lines = self.process_xmlfile_to_lines(file)
                     self.write_event(lines)
                 else:
                     self.helper.log_debug("process_incoming: Ignoring file %s" % file)
