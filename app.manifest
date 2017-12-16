@@ -1,11 +1,11 @@
 {
   "schemaVersion": "1.0.0",
   "info": {
-    "title": "TA-dmarc",
+    "title": "TA-dmarc add-on for Splunk",
     "id": {
       "group": null,
       "name": "TA-dmarc",
-      "version": "2.2.0"
+      "version": "2.3.0"
     },
     "author": [
       {
@@ -15,7 +15,7 @@
       }
     ],
     "releaseDate": null,
-    "description": "Add-on for ingesting DMARC aggregate reports into Splunk",
+    "description": "Add-on for ingesting DMARC XML aggregate reports into Splunk from an IMAP account or local directory.",
     "classification": {
       "intendedAudience": null,
       "categories": [],

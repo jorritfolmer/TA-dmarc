@@ -1,8 +1,32 @@
 # TA-dmarc add-on for Splunk
 
-Add-on for ingesting DMARC XML aggregate reports into Splunk from an IMAP account or local directory, with mitigations against XML, GZ and ZIP-bombs. 
+TA-dmarc add-on supports ingesting DMARC XML aggregate reports:
 
-## Supported versions and platforms
+1. from a given directory
+2. from a given IMAP mailbox
+
+and output
+
+1. in JSON format (preferred)
+2. in key=value format (left for legacy purposes)
+
+with mitigations against:
+
+* ZIP bombs
+* gzip bombs
+* various XML attack vectors like billion laughs, quadratic blowup, external entity expansion and so on
+
+## Principles
+
+We use the following guidelines for developing this add-on:
+
+| Principle | Rationale | Implication
+|----------------|-------|---------
+| Data is left intact | This add-on only performs data collection. Other apps may perform data aggregation based on the output of this add-on and require intact data | We don't interpret, alter or omit values. For example we leave the invalid domain AOL uses "not.evaluated" to denote the inability to perform a DKIM check.
+| Structure is left intact | DMARC XML is an hierarchical format | We use JSON output. Key=value output will be deprecated in future versions.
+| Data is enriched where appropriate | New fields can be added to provide better context or offer normalization of the existing data | XSD validation results and DNS resolutions are are added as additional fields. Compliance with CIM authentication datamodel too.
+
+## Supported Splunk versions and platforms
 
 | Splunk version | Linux | Windows
 |----------------|-------|---------
@@ -41,119 +65,103 @@ The following table lists support for distributed deployment roles in a Splunk d
 | Cluster Master       | No  | This add-on should be installed on a heavy forwarder that performs parsing at index time. There is no need to install this add-on on an indexer too.
 | Deployment Server    | Depends  | This add-on can be (1) deployed unconfigured to a client or (2) deployed preconfigured with a directory input. Due to the encrypted credentials it cannot be deployed preconfigured for IMAP inputs.
 
-## Configure inputs for TA-dmarc
+## Configure TA-dmarc add-on for Splunk
 
 ![Screenshot create new input](appserver/static/screenshot.png)
 
-The TA-dmarc supports the following input modes:
-
-* Read aggregate reports from an IMAP account. The add-on only ingests mails with "Report domain:" in the subject. It leaves the ingested mails on the IMAP server and keeps a record of which mails have already been processed.
-* Read aggregate reports from a directory. This can be useful to batch load the aggregate reports in non-internet-connected environments.
-
 ### Directory input
 
-TA-dmarc can watch a folder where you drop DMARC aggregate reports manually or otherwise.
-It will read files with .xml, .zip or .xml.gz extention, ingest them into Splunk. Any invalid .xml, .zip or .xml.gz files are ignored. 
+TA-dmarc can watch a folder for new DMARC aggregate reports. This can be useful for loading DMARC reports in non-internet connected environments. It will look for files with extentions:
 
-TA-dmarc will leave files untouched in the directory: it uses internal checkpointing to skip files that have been previously ingested.
+1. .xml
+2. .zip
+3. .xml.gz
+
+TA-dmarc doesn't modify, move or delete files in the directory: it uses internal checkpointing to keep track of which files have been previously read. Any invalid .xml, .zip or .xml.gz files are ignored and logged.
 
 1. Go to the add-on's configuration UI and configure a new modular input by clicking on the "Inputs" menu.
 2. Click "Create new input"
-2. Select "DMARC directory"
+2. Select "DMARC directory (JSON output)"
 3. Configure:
    * Name: e.g. "production_dmarc_indir"
-   * Interval: how often to poll the directory where DMARC XML aggregate reports are read from (see below)
+   * Interval: how often to poll the directory where DMARC XML aggregate reports are read from
    * Index: what Splunk index to send the aggregate reports to
    * Directory: Location where DMARC aggregate reports should be read from
    * Quiet time: Ignore files that have a modification time of less than n seconds ago. You can use this to prevent ingesting large files that are dropped on a network share but take some time to transfer
    * Resolve IP: Whether or not to resolve the raw source_ip in the DMARC XML aggregate reports
+   * Validate XML: Whether or not to validate the DMARC XML against the DMARC XSD
 4. Click add
 
 ### IMAP input
 
-TA-dmarc can fetch DMARC aggregate report attachments from mails on an IMAP server. It will process attachments in .xml, .zip or xml.gz format and ingest them into Splunk.
+TA-dmarc can fetch DMARC aggregate reports from an IMAP server.  It will look for:
 
-TA-dmarc will leave the mails on the server: it uses internal checkpointing to skip mails that have been previously ingested.
+1. messages with "Report domain:" in the subject.
+2. attachments with .xml, .zip or xml.gz file extentions
+3. attachments with mime-types:
+    - application/zip
+    - application/gzip
+    - application/x-gzip
+    - application/xml
+    - text/xml
+    - application-x-gzip (Non-standard mimetype used for Comcast DMARC reports)
+    - application/x-zip-compressed (Non-standard mimetype used for Yahoo DMARC reports)
 
-1. Go to the add-on's configuration UI and configure an account to authenticate with:
+The add-on doesn't modify, move or delete messages on the IMAP server but insteads keeps a record in the Splunk KV-store of which mails have already been read.
+
+1. First, go to the add-on's configuration tab and configure an account to authenticate with:
    * Account Name: descriptive account name, e.g. google_dmarc_mailbox
    * Username: the account to identify with
    * Password: the password to authenticate with
-2. Next, go to the add-on's configuration UI and configure a new modular input by clicking on the "Inputs" menu.
+2. Next, go to the add-on's input tab and configure a new modular input by clicking on the "Inputs" menu.
 2. Click "Create new input"
-3. Select "DMARC mailbox"
+3. Select "DMARC mailbox (JSON output)"
 4. Configure:
    * Name: e.g. dmarc-google
    * Interval: how often to poll the mailserver for aggregate reports.
    * Index: what Splunk index to send the aggregate reports to
    * Global Account: select the account to authenticate with
    * IMAP server: the imap server to poll
-   * Use SSL: whether or not to use an encrypted connection
    * Resolve IP: Whether or not to resolve the row source_ip in the DMARC XML aggregate reports
+   * Validate XML: Whether or not to validate the DMARC XML against the DMARC XSD
 
 ![Create global account](appserver/static/screenshot_create_global_account.png)
 
-## DMARC aggregate reports
+### Resolve IP setting
 
-This add-on handles the following file formats in which aggregate reports are delivered:
-
-1. XML (as .xml file)
-2. ZIP (as .zip file)
-3. GZ (as .xml.gz file)
-
-Mitigations are in place against:
-
-* ZIP bombs
-* gzip bombs
-* various XML attack vectors like billion laughs, quadratic blowup, external entity expansion and so on
+DMARC XML aggregate reports contain a `source_ip` that can be reverse resolved at index time. This is the default but can cause considerable delay in processing aggregate reports due to unreachable nameservers.
+Second, because the reverse DNS record cannot really be trusted, another forward lookup is performed. Only if the reverse and forward lookup match, the result is included in the output.
 
 ### Validate XML setting
 
-Additionally, the DMARC XML aggregate reports can be validated against the DMARC RUA XML schema definition (XSD).
+DMARC XML aggregate reports can be validated against the DMARC RUA XML schema definition (XSD).
 This can be configured in the input with the checkbox "Validate XML"
 The result of the validation is added as a new event field in Splunk `vendor_vendor_rua_xsd_validation`.
-In practice this validation is too strict to start rejecting aggregate reports, because real ones from Google or Splunk fail XSD validation regularly because of non-standard fields.
+In practice this validation cannot be used to reject aggregate reports because real ones from Google or Splunk fail XSD validation regularly because of non-standard fields.
 
-### Field mapping
+## DMARC aggregate reports
 
-From the XML sample below, these fields are created:
+Relevant fields within an aggregate report are mapped from the CIM Authentication datamodel, because DMARC is short for "Domain-based Message Authentication ... etc".
 
-| XML field                       | Splunk field name               | Value                                       |
-|---------------------------------|---------------------------------|---------------------------------------------|
-|feedback/report_metadata/org_name | rpt_metadata_org_name            | google.com                                  | 
-|feedback/report_metadata/email    | rpt_metadata_email               | noreply-dmarc-support@google.com            | 
-|feedback/report_metadata/extra_contact_info | rpt_metadata_extra_contact_info  | https://support.google.com/a/answer/2466580 | 
-|feedback/report_metadata/report_id | rpt_metadata_report_id           | 13190401177475355109                        | 
-|feedback/report_metadata/date_range/begin | rpt_metadata_date_range_begin    | 1506988800                                  | 
-|feedback/report_metadata/date_range/end | rpt_metadata_date_range_end      | 1507075199                                  | 
-|feedback/policy_published/domain  | policy_published_domain          | example.com                           | 
-|feedback/policy_published/adkim   | policy_published_adkim           | r                                           | 
-|feedback/policy_published/adpf    | policy_published_aspf            | r                                           | 
-|feedback/policy_published/p       | policy_published_p               | none                                        | 
-|feedback/policy_published/pct     | policy_published_pct             | 100                                         | 
-|feedback/record/row/source_ip     | row_source_ip                    | 192.0.2.78                              | 
-|feedback/record/row/count         | row_count                        | 1                                           | 
-|feedback/record/row/policy_evaluated/disposition |row_policy_evaluated_disposition | none                                        | 
-|feedback/record/row/policy_evaluated/dkim |row_policy_evaluated_dkim        | fail                                        | 
-|feedback/record/row/policy_evaluated/spf  |row_policy_evaluated_spf         | fail                                        | 
-|feedback/record/identifiers/header_from   |identifiers_header_from          | example.com                           | 
-|feedback/record/auth_results/spf/domain   | auth_result_spf_domain           | example.com                           | 
-|feedback/record/auth_results/spf/domain   | auth_result_spf_result           | fail                                        | 
+Mapping from the Authentication datamodel has the following advantages:
 
-### Authentication datamodel
+- DMARC aggregate report results are automatically incorporated in the relevante Splunk Enterprise Security dashboards.
+- Accelerated `|tstats` searches can be performed against the normalized fields by selecting `where All_Authentication.app=dmarc` 
 
-Besides the fields contained in the report, additional fields are mapped from the CIM Authentication datamodel, based on the XML sample below:
+### Authentication datamodel mappings
+
+From the XML sample below, the following values and fields are mapped:
 
 | Authentication datamodel field name  | Value                           |
 |--------------------------------------|---------------------------------|
 | action                               | failure               |
 | app                                  | dmarc                 |
 | dest                                 | google.com            |
-| signature                            | Use of mail-from domain example.com |
+| signature                            | Use of mail-from domain example.com at google.com|
 | signature_id                         | 13190401177475355109  |
 | src                                  | resolved.name.if.available.test |
 | src_ip                               | 192.0.2.78 |
-| src_user                             | example.com |
+| user                                 | example.com |
 | eventtype                            | dmarc_rua_spf_only |
 | tag                                  | authentication, insecure|
 
@@ -204,6 +212,44 @@ Besides the fields contained in the report, additional fields are mapped from th
 </feedback>
 ```
 
+### Fields
+
+From the DMARC XML sample above, the following fields are created:
+
+|Splunk field | value | origin|
+|-------------|-------|-------|
+|action                                       |success                          | CIM
+|app                                          |dmarc                            | CIM 
+|dest                                         |google.com                       | CIM 
+|eventtype                                    |dmarc_rua_spf_only(authentication insecure) |CIM
+|feedback{}.policy_published.adkim            |r               | XML report
+|feedback{}.policy_published.aspf             |r               | XML report
+|feedback{}.policy_published.domain           |example.com     | XML report
+|feedback{}.policy_published.p                |none            | XML report
+|feedback{}.policy_published.pct              |100             | XML report
+|feedback{}.policy_published.sp               |none            | XML report
+|feedback{}.record.auth_results.spf.domain    |example.com     | XML report
+|feedback{}.record.auth_results.spf.result    |fail            | XML report
+|feedback{}.record.identifiers.header_from    |example.com     | XML report
+|feedback{}.record.row.count                  |1               | XML report
+|feedback{}.record.row.policy_evaluated.disposition|none       | XML report
+|feedback{}.record.row.policy_evaluated.dkim  |fail            | XML report
+|feedback{}.record.row.policy_evaluated.spf   |fail            | XML report
+|feedback{}.record.row.source_ip              |186.32.191.194  | XML report
+|feedback{}.report_metadata.date_range.begin  |1506988800      | XML report
+|feedback{}.report_metadata.date_range.end    |1507075199      | XML report
+|feedback{}.report_metadata.email             |noreply-dmarc-support@google.com | XML report
+|feedback{}.report_metadata.extra_contact_info|https://support.google.com/a/answer/2466580 | XML report
+|feedback{}.report_metadata.org_name          |google.com      | XML report
+|feedback{}.report_metadata.report_id         |13190401177475355109 | XML report
+|signature                                    |Use of mail-from domain example.com at google.com| CIM
+|signature_id                                 |13190401177475355109 | CIM
+|src                                          |ip-192-0-2-78.pool.someprovider.local | Add-on enrichment
+|src_ip                                       |192.0.2.78           | CIM
+|user                                         |example.com          | CIM
+|tag                                          |authentication, insecure | CIM
+|vendor_rua_xsd_validation                    |success              | Add-on enrichment
+
 ## Advanced
 
 ### Checkpointing
@@ -229,27 +275,22 @@ If you want to reindex a single DMARC report, you can do so by deleting its corr
 
 Reindexing a DMARC report from a directory input is left as an excercise for the reader.
 
-### Supported mimetypes for aggregate report attachments
+## Contributers
 
-Attachments with the following mime-types will be processed:
+These people haves contributed pull requests, issues, ideas or otherwise spent time improving this add-on:
 
-- application/zip
-- application/gzip
-- application/x-gzip
-- application/xml
-- text/xml
-- application-x-gzip (Non-standard mimetype used by Comcast dmarc reports)
-- application/x-zip-compressed (Non-standard mimetype used by Yahoo dmarc reports)
-
-Submit an issue in the issuetracker if you encounter other mimetypes in the wild that should be on this list, even though they're non-standard.
+- Steve Myers (stmyers)
+- John (john-9c54a80b)
+- Steven Hilton (malvidin)
 
 ## Third party software credits
 
 The following software components are used in this add-on:
 
 1. [defusedxml](https://pypi.python.org/pypi/defusedxml/0.5.0) version 0.5.0 by Christian Heimes
-2. [IMAPClient](https://github.com/mjs/imapclient) version 1.0.2 by Menno Finlay-Smits
-2. [Splunk Add-on Builder](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Overview) version 2.2.0 by Splunk and the [third-party software](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Thirdpartysoftwarecredits) it uses
+2. [xmljson](https://pypi.python.org/pypi/xmljson) version 0.1.9 by S. Anand
+3. [IMAPClient](https://github.com/mjs/imapclient) version 1.0.2 by Menno Finlay-Smits
+4. [Splunk Add-on Builder](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Overview) version 2.2.0 by Splunk and the [third-party software](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Thirdpartysoftwarecredits) it uses
 
 ## CHANGELOG
 
@@ -258,4 +299,3 @@ See CHANGELOG.md
 ## Support
 
 This is an open source project without warranty of any kind. No support is provided. However, a public repository and issue tracker are available at https://github.com/jorritfolmer/TA-dmarc
-

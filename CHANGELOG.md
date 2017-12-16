@@ -1,13 +1,24 @@
 # Changelog
 
+## 2.3.0
+
+- Added JSON output to better preserve report structure, issue #4. 
+  (Thanks to Steven Hilton for the Pull Request)
+- Added unit tests for rua2json() and rua2kv() 
+  (Thanks to Steven Hilton for the Pull Request)
+- Fixed missing metadata and record information in key=value output, issue #5. 
+  (Thanks to Steven Hilton for reporting these issues)
+- Fixed incorrect action field from the authentication datamodel to use policy_evaluated instead of auth_results. The policy is leading in message authentication.
+- Moved to user field instead of incorrect src_user field from the authentication datmodel. Keeping src_user field for backward compatibility.
+
 ## 2.2.0
 
-- Added non-standard mimetypes used by Verizon and Yahoo to the dmarc reports attachment filter
+- Added non-standard mimetypes used by Verizon and Yahoo to the dmarc reports attachment filter, issue #3
   (Thanks to John for reporting this issue)
 
 ## 2.1.1
 
-- Fixed reading reports with absolute paths from zip files
+- Fixed reading reports with absolute paths from zip files, issue #2
   (Thanks to Steve Myers for reporting this issue)
 
 ## 2.1.0

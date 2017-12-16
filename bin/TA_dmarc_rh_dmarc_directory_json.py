@@ -34,7 +34,7 @@ fields = [
         )
     ), 
     field.RestField(
-        'dmarc_directory',
+        'directory',
         required=True,
         encrypted=False,
         default=None,
@@ -47,7 +47,7 @@ fields = [
         'quiet_time',
         required=True,
         encrypted=False,
-        default='30',
+        default=None,
         validator=validator.String(
             min_len=0, 
             max_len=8192, 
@@ -80,7 +80,7 @@ model = RestModel(fields, name=None)
 
 
 endpoint = DataInputModel(
-    'dmarc_directory',
+    'dmarc_directory_json',
     model,
 )
 
