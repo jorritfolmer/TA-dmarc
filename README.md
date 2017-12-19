@@ -111,8 +111,8 @@ Mitigations are in place against:
 
 Additionally, the DMARC XML aggregate reports can be validated against the DMARC RUA XML schema definition (XSD).
 This can be configured in the input with the checkbox "Validate XML"
-The result of the validation is added as a new event field in Splunk `vendor_vendor_rua_xsd_validation`.
-In practice this validation is too strict to start rejecting aggregate reports, because real ones from Google or Splunk fail XSD validation regularly because of non-standard fields.
+The result of the validation is added as a new event field in Splunk `vendor_vendor_rua_xsd_validation` or 'rua_xsd_validation' under 'report_metadata'.
+Using the relaxed XSD that bridges the DMARC XSD and the RFC 7489 XSD, all reports should validate successfully.
 
 ### Field mapping
 
@@ -139,6 +139,63 @@ From the XML sample below, these fields are created:
 |feedback/record/identifiers/header_from   |identifiers_header_from          | example.com                           | 
 |feedback/record/auth_results/spf/domain   | auth_result_spf_domain           | example.com                           | 
 |feedback/record/auth_results/spf/domain   | auth_result_spf_result           | fail                                        | 
+
+With the JSON export, all fields are maintained.
+Each row of the report includes the report_metadata and policy published.
+
+{
+  "feedback": [
+    {
+      "report_metadata": {
+        "org_name": "acme.com",
+        "email": "noreply-dmarc-support@acme.com",
+        "extra_contact_info": "http://acme.com/dmarc/support",
+        "report_id": "9391651994964116463",
+        "date_range": {
+          "begin": "1335571200",
+          "end": "1335657599"
+        }
+      }
+    },
+    {
+      "policy_published": {
+        "domain": "example.com",
+        "adkim": "r",
+        "aspf": "r",
+        "p": "none",
+        "sp": "none",
+        "pct": "100"
+      }
+    },
+    {
+      "record": {
+        "row": {
+          "source_ip": "72.150.241.94",
+          "count": "2",
+          "policy_evaluated": {
+            "disposition": "none",
+            "dkim": "fail",
+            "spf": "pass"
+          }
+        },
+        "identifiers": {
+          "header_from": "example.com"
+        },
+        "auth_results": {
+          "dkim": {
+            "domain": "example.com",
+            "result": "fail",
+            "human_result": {}
+          },
+          "spf": {
+            "domain": "example.com",
+            "result": "pass"
+          }
+        }
+      }
+    }
+  ]
+}
 
 ### Authentication datamodel
 
@@ -204,6 +261,9 @@ Besides the fields contained in the report, additional fields are mapped from th
 </feedback>
 ```
 
+An additional RUA example is provided by DMARC.org
+https://dmarc.org/wiki/FAQ#I_need_to_implement_aggregate_reports.2C_what_do_they_look_like.3F
+
 ## Advanced
 
 ### Checkpointing
@@ -249,7 +309,8 @@ The following software components are used in this add-on:
 
 1. [defusedxml](https://pypi.python.org/pypi/defusedxml/0.5.0) version 0.5.0 by Christian Heimes
 2. [IMAPClient](https://github.com/mjs/imapclient) version 1.0.2 by Menno Finlay-Smits
-2. [Splunk Add-on Builder](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Overview) version 2.2.0 by Splunk and the [third-party software](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Thirdpartysoftwarecredits) it uses
+3. [xmljson] (https://github.com/sanand0/xmljson) version 0.1.9 by S Anand
+4. [Splunk Add-on Builder](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Overview) version 2.2.0 by Splunk and the [third-party software](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Thirdpartysoftwarecredits) it uses
 
 ## CHANGELOG
 
