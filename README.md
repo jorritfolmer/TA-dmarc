@@ -140,9 +140,12 @@ From the XML sample below, these fields are created:
 |feedback/record/auth_results/spf/domain   | auth_result_spf_domain           | example.com                           | 
 |feedback/record/auth_results/spf/domain   | auth_result_spf_result           | fail                                        | 
 
-With the JSON export, all fields are maintained.
+With the JSON export, all fields are maintained and returned on one line. The example below is expanded for readability.
 Each row of the report includes the report_metadata and policy published.
 
+The XSD validation information is included in the report_metadata, and IP resolution is included in the record/row.
+Splunk will order these fields alphabetically when syntax highlighted, unless the Splunk Web UI JSON parser is modified.
+```
 {
   "feedback": [
     {
@@ -196,6 +199,7 @@ Each row of the report includes the report_metadata and policy published.
     }
   ]
 }
+```
 
 ### Authentication datamodel
 
@@ -309,7 +313,7 @@ The following software components are used in this add-on:
 
 1. [defusedxml](https://pypi.python.org/pypi/defusedxml/0.5.0) version 0.5.0 by Christian Heimes
 2. [IMAPClient](https://github.com/mjs/imapclient) version 1.0.2 by Menno Finlay-Smits
-3. [xmljson] (https://github.com/sanand0/xmljson) version 0.1.9 by S Anand
+3. [xmljson](https://github.com/sanand0/xmljson) version 0.1.9 by S Anand
 4. [Splunk Add-on Builder](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Overview) version 2.2.0 by Splunk and the [third-party software](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Thirdpartysoftwarecredits) it uses
 
 ## CHANGELOG
