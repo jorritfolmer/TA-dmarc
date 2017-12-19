@@ -49,6 +49,38 @@ class TestDMARCprocessing(unittest.TestCase):
         eq(kv_export, expected_result)
         fkv.close()
 
+    def test_multiple_dkim_auth_file(self):
+        """Test that the DMARC.org XML example with multiple DKIM authentication results is returned correctly.
+        https://dmarc.org/wiki/FAQ#I_need_to_implement_aggregate_reports.2C_what_do_they_look_like.3F
+        """
+        eq = self.assertEqual
+        # process basic RUA from dmarc.org
+        d2s = Dir2Splunk(None, helper, None, None, None, None, None)
+        # read in expected JSON output and compare
+        json_export = "".join(d2s.process_xmlfile_to_json_lines("./data/dkim2auth.xml"))
+        fjson = open("./data/dkim2auth.json", "r")
+        expected_result = fjson.read()
+        eq(json_export, expected_result)
+        fjson.close()
+        # read in expected KV output and compare
+        kv_export = "".join(d2s.process_xmlfile_to_lines("./data/dkim2auth.xml"))
+        fkv = open("./data/dkim2auth.kv", "r")
+        expected_result = fkv.read()
+        eq(kv_export, expected_result)
+        fkv.close()
+
+    def test_rua_validation(self):
+        """Test that the DMARC.org XML example is validated properly with rua.xsd.
+        https://dmarc.org/wiki/FAQ#I_need_to_implement_aggregate_reports.2C_what_do_they_look_like.3F
+        """
+        eq = self.assertEqual
+        neq = self.assertNotEqual
+        # process basic RUA from dmarc.org
+        d2s = Dir2Splunk(None, helper, None, None, None, True, None)
+        # read in expected XML input and validate with rua.xsd
+        neq(d2s.validate_xml("./data/fail_rua_xsd.xml"), True)
+        eq(d2s.validate_xml("./data/pass_rua_xsd.xml"), True)
+
 
 def _testclasses():
     mod = sys.modules[__name__]

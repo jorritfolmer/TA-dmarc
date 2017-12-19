@@ -136,8 +136,11 @@ Second, because the reverse DNS record cannot really be trusted, another forward
 
 DMARC XML aggregate reports can be validated against the DMARC RUA XML schema definition (XSD).
 This can be configured in the input with the checkbox "Validate XML"
-The result of the validation is added as a new event field in Splunk `vendor_vendor_rua_xsd_validation`.
-In practice this validation cannot be used to reject aggregate reports because real ones from Google or Splunk fail XSD validation regularly because of non-standard fields.
+The result of the validation is added as new event fields in Splunk:
+
+- `vendor_vendor_rua_xsd_validation`: success or failure
+- `vendor_vendor_rua_xsd_validation_error`": validation error text, e.g: 
+  > Element 'sp': [facet 'enumeration'] The value '' is not an element of the set {'none', 'quarantine', 'reject'}., line 19
 
 ## DMARC aggregate reports
 

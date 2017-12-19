@@ -182,7 +182,7 @@ class Dir2Splunk:
                               % xmldata.findtext("report_metadata/report_id", default=""))
         return result
 
-    def rua2json(self, xmldata, valid=False):
+    def rua2json(self, xmldata, validation_result=False):
         """ Returns a string in JSON format based on RUA XML input and its validation status,
             with optionally resolved IP addresses. Resolved checks are validated somewhat.
         """
@@ -212,10 +212,10 @@ class Dir2Splunk:
                 except Exception:
                     self.helper.log_debug("rua2json: failed to resolve %s" % data_ip)
             if self.do_validate_xml:
-                if valid:
+                if validation_result == True:
                     xsd_validation = ", \"vendor_rua_xsd_validation\": \"success\""
                 else:
-                    xsd_validation = ", \"vendor_rua_xsd_validation\": \"failure\""
+                    xsd_validation = ", \"vendor_rua_xsd_validation\": \"failure\", \"vendor_rua_xsd_validation_error\": \"" + validation_result + "\""
             data = dumps(yahoo.data(record))
             # Aggregate report metadata, policy, record and xsd_validation field
             result.append("{\"feedback\": [" + metadata + "," + policy + "," + data + "]" + xsd_validation + "}\n")
@@ -344,27 +344,30 @@ class Dir2Splunk:
 
     def validate_xml(self, file):
         """ Validate DMARC XML files against the DMARC XML schema definition file (xsd)
-            Returns true or false
+            Returns True or an escaped exception string
         """
-        xsdfile = os.path.join(sys.path[0], "..", "dmarc", "rua.xsd")
+        xsdfile = os.path.join(sys.path[0], "..", "dmarc", "rua_relaxed.xsd")
         try:
             xmldata = open(file, 'r').read()
             xsddata = open(xsdfile, 'r').read()
         except Exception as e:
             self.helper.log_warning("validate_xml: xsd validation opening with %s" % str(e))
-            return False
+            res = str(e).replace('"', '\\"').replace('\n', '\\n')
+            return res
         try:
             xml = etree.XML(xmldata)
             xsd = etree.XML(xsddata)
             xmlschema = etree.XMLSchema(xsd)
         except Exception as e:
             self.helper.log_warning("validate_xml: xml parse error for file %s with %s" % (file, str(e)))
-            return False
+            res = str(e).replace('"', '\\"').replace('\n', '\\n')
+            return res
         try:
             xmlschema.assertValid(xml)
         except Exception as e:
             self.helper.log_warning("validate_xml: xsd validation failed for file %s with %s" % (file, str(e)))
-            return False
+            res = str(e).replace('"', '\\"').replace('\n', '\\n')
+            return res
         else:
             self.helper.log_debug("validate_xml: xsd validation successful for file %s" % file)
             return True
