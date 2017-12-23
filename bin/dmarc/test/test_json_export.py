@@ -1,4 +1,3 @@
-import os
 import sys
 from test.test_support import run_unittest
 from dmarc.dir2splunk import Dir2Splunk
@@ -14,7 +13,6 @@ helper.log_critical = helper.critical
 
 
 # set the path up one directory to match the XML validation file path
-sys.path[0] = os.path.join(sys.path[0], "..")
 
 
 class TestDMARCprocessing(unittest.TestCase):
@@ -24,7 +22,6 @@ class TestDMARCprocessing(unittest.TestCase):
         https://dmarc.org/wiki/FAQ#I_need_to_implement_aggregate_reports.2C_what_do_they_look_like.3F
         """
         eq = self.assertEqual
-        eq(1, 1)
         # process basic RUA from dmarc.org
         d2s = Dir2Splunk(None, helper, None, None, None, None, None)
         # read in expected JSON output and compare
@@ -39,7 +36,6 @@ class TestDMARCprocessing(unittest.TestCase):
         https://dmarc.org/wiki/FAQ#I_need_to_implement_aggregate_reports.2C_what_do_they_look_like.3F
         """
         eq = self.assertEqual
-        eq(1, 1)
         # process basic RUA from dmarc.org
         d2s = Dir2Splunk(None, helper, None, None, None, None, None)
         # read in expected KV output and compare
