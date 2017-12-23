@@ -13,7 +13,7 @@ helper.log_error = helper.error
 helper.log_critical = helper.critical
 
 
-# set the path up one directory to match the XML validation file rua.xsd path
+# set the path up one directory to match the XML validation file path
 sys.path[0] = os.path.join(sys.path[0], "..")
 
 
@@ -60,14 +60,14 @@ class TestDMARCprocessing(unittest.TestCase):
         fkv.close()
 
     def test_rua_validation(self):
-        """Test that the DMARC.org XML example is validated properly with rua.xsd.
+        """Test that the DMARC.org XML example is validated properly.
         https://dmarc.org/wiki/FAQ#I_need_to_implement_aggregate_reports.2C_what_do_they_look_like.3F
         """
         eq = self.assertEqual
         neq = self.assertNotEqual
         # process basic RUA from dmarc.org
         d2s = Dir2Splunk(None, helper, None, None, None, True, None)
-        # read in expected XML input and validate with rua.xsd
+        # read in expected XML input and validate
         neq(d2s.validate_xml("./data/fail_rua_xsd.xml"), True)
         eq(d2s.validate_xml("./data/pass_rua_xsd.xml"), True)
 
