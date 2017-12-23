@@ -31,6 +31,8 @@
     <xs:enumeration value="none"/>
     <xs:enumeration value="quarantine"/>
     <xs:enumeration value="reject"/>
+    <!-- Added empty string because Splunk returns an empty 'sp' string -->
+    <xs:enumeration value=""/>
   </xs:restriction>
 </xs:simpleType>
 <!-- The DMARC policy that applied to the messages in this report. -->
