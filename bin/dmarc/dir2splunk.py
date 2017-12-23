@@ -1,5 +1,4 @@
 import os
-import sys
 import time
 import socket
 from lxml import etree
@@ -334,7 +333,8 @@ class Dir2Splunk:
         """ Validate DMARC XML files against the DMARC XML schema definition file (xsd)
             Returns True or exception string
         """
-        xsdfile = os.path.join(sys.path[0], "..", "dmarc", "rua_relaxed.xsd")
+        dmarc_path = os.path.dirname(__file__)
+        xsdfile = os.path.join(dmarc_path, "rua_relaxed.xsd")
         try:
             xmldata = open(file, 'r').read()
             xsddata = open(xsdfile, 'r').read()
