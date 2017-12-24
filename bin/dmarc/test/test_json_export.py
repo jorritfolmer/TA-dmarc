@@ -74,8 +74,8 @@ class TestDMARCprocessing(unittest.TestCase):
         # process basic RUA from dmarc.org
         d2s = Dir2Splunk(None, helper, None, None, None, True, None)
         # read in expected XML input and validate
-        neq(d2s.validate_xml("./data/fail_rua_xsd.xml"), True)
-        eq(d2s.validate_xml("./data/pass_rua_xsd.xml"), True)
+        neq(d2s.validate_xml("./data/fail_rua_xsd.xml", "rua_strict_dmarc.xsd"), True)
+        eq(d2s.validate_xml("./data/pass_rua_xsd.xml", "rua_strict_dmarc.xsd"), True)
 
 
 def _testclasses():
