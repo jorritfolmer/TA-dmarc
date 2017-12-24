@@ -77,6 +77,19 @@ class TestDMARCprocessing(unittest.TestCase):
         neq(d2s.validate_xml("./data/fail_rua_xsd.xml", "rua_strict_dmarc.xsd"), True)
         eq(d2s.validate_xml("./data/pass_rua_xsd.xml", "rua_strict_dmarc.xsd"), True)
 
+    def test_google_rua_validation(self):
+        """Test that the DMARC.org XML example is validated properly.
+        https://dmarc.org/wiki/FAQ#I_need_to_implement_aggregate_reports.2C_what_do_they_look_like.3F
+        """
+        eq = self.assertEqual
+        neq = self.assertNotEqual
+        # process basic RUA from dmarc.org
+        d2s = Dir2Splunk(None, helper, None, None, None, True, None)
+        # read in expected XML input and validate
+        neq(d2s.validate_xml("./data/google_rua.xml", "rua_strict_rfc7489.xsd"), True)
+        neq(d2s.validate_xml("./data/google_rua.xml", "rua_strict_dmarc.xsd"), True)
+        eq(d2s.validate_xml("./data/google_rua.xml", "rua_relaxed.xsd"), True)
+
 
 def _testclasses():
     mod = sys.modules[__name__]
