@@ -341,12 +341,12 @@ class Dir2Splunk:
         return lines
 
 
-    def validate_xml(self, file):
+    def validate_xml(self, file, xsdfile="rua_relaxed.xsd"):
         """ Validate DMARC XML files against the DMARC XML schema definition file (xsd)
             Returns True or an escaped exception string
         """
         dmarc_path = os.path.dirname(__file__)
-        xsdfile = os.path.join(dmarc_path, "rua_relaxed.xsd")
+        xsdfile = os.path.join(dmarc_path, xsdfile)
         try:
             xmldata = open(file, 'r').read()
             xsddata = open(xsdfile, 'r').read()
