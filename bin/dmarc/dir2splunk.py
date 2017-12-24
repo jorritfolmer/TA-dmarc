@@ -342,8 +342,8 @@ class Dir2Splunk:
         return lines
 
 
-    def validate_xml(self, file, xsdfile="rua_rfc7489.xsd"):
-        """ Validate DMARC XML files against the DMARC XML schema definition file (xsd)
+    def validate_xml(self, file, xsdfile="rua_ta_dmarc_relaxed_v01.xsd"):
+        """ Validate DMARC XML files against our own relaxed DMARC XML schema definition file (xsd)
             Returns True or an escaped exception string
         """
         dmarc_path = os.path.dirname(__file__)
@@ -366,11 +366,11 @@ class Dir2Splunk:
         try:
             xmlschema.assertValid(xml)
         except Exception as e:
-            self.helper.log_warning("validate_xml: xsd validation failed for file %s with %s" % (file, str(e)))
+            self.helper.log_warning("validate_xml: xsd validation failed against %s for file %s with %s" % (os.path.basename(xsdfile), file, str(e)))
             res = str(e).replace('"', '\\"').replace('\n', '\\n')
             return res
         else:
-            self.helper.log_debug("validate_xml: xsd validation successful for file %s" % file)
+            self.helper.log_debug("validate_xml: xsd validation successful against %s for file %s" % (os.path.basename(xsdfile), file))
             return True
         return False
 
