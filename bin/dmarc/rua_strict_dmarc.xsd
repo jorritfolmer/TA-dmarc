@@ -124,6 +124,7 @@ trusted_forwarder:  Message authentication failure was anticipated by
 
 <!-- Credit to Roger L. Costello for IPv4 regex http://mailman.ic.ac.uk/pipermail/xml-dev/1999-December/018018.html -->
 <!-- Credit to java2s.com for IPv6 regex http://www.java2s.com/Code/XML/XML-Schema/IPv6addressesareeasiertodescribeusingasimpleregex.htm -->
+<!-- The IPv6 regex does not support compressed addresses -->
 <xs:simpleType name="IPAddress">
   <xs:restriction base="xs:string">
     <xs:pattern value="((1?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]).){3}(1?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])|([A-Fa-f0-9]{1,4}:){7}[A-Fa-f0-9]{1,4}"/>
