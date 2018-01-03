@@ -62,6 +62,10 @@ class ModInputdmarc_imap_json(modinput_wrapper.base_modinput.BaseModInput):
                                          description="Validate the aggregate reports against the DMARC XSD. Results are included in the field vendor_rua_xsd_validation.",
                                          required_on_create=False,
                                          required_on_edit=False))
+        scheme.add_argument(smi.Argument("imap_mailbox", title="IMAP mailbox",
+                                         description="Select the IMAP mailbox to poll. Default: INBOX",
+                                         required_on_create=True,
+                                         required_on_edit=False))
         return scheme
 
     def get_app_name(self):

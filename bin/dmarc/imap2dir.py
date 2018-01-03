@@ -4,7 +4,7 @@ import email
 from imapclient import IMAPClient
 
 
-# Copyright 2017 Jorrit Folmer
+# Copyright 2017-2018 Jorrit Folmer
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -32,10 +32,11 @@ class Imap2Dir:
     """
 
 
-    def __init__(self, helper, opt_imap_server, tmp_dir, opt_use_ssl, opt_global_account):
+    def __init__(self, helper, opt_imap_server, tmp_dir, opt_use_ssl, opt_global_account, opt_imap_mailbox):
         # Instance variables:
         self.helper             = helper
         self.opt_imap_server    = opt_imap_server
+        self.opt_imap_mailbox   = 'INBOX' if opt_imap_mailbox == None else opt_imap_mailbox
         self.opt_use_ssl        = opt_use_ssl
         self.opt_global_account = opt_global_account
         self.tmp_dir            = tmp_dir
@@ -72,9 +73,10 @@ class Imap2Dir:
         else:
             self.helper.log_debug('get_dmarc_messages: successfully connected to %s' % self.opt_imap_server)
             self.server.login(self.opt_global_account["username"], self.opt_global_account["password"])
-            self.server.select_folder('INBOX')
+            info = self.server.select_folder(self.opt_imap_mailbox)
+            self.helper.log_debug('get_dmarc_messages: %d messages in folder %s' % (info['EXISTS'], self.opt_imap_mailbox))
             messages = self.server.search('SUBJECT "Report domain:"')
-            self.helper.log_debug('get_dmarc_messages: %d messages match subject "Report domain:"' % len(messages))
+            self.helper.log_debug('get_dmarc_messages: %d messages in folder %s match subject "Report domain:"' % (len(messages), self.opt_imap_mailbox))
         return messages
 
 
@@ -95,8 +97,6 @@ class Imap2Dir:
         else:
             self.helper.log_debug('write_part_to_file: saved file %s from uid %d' % (filename, uid))
             return filename
-
-
      
 
     def save_reports_from_message_bodies(self, response):

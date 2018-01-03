@@ -15,7 +15,7 @@ from json import dumps
 from xmljson import yahoo
 
 
-# Copyright 2017 Jorrit Folmer
+# Copyright 2017-2018 Jorrit Folmer
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -285,7 +285,7 @@ class Dir2Splunk:
 
     def process_xmlfile_to_json_lines(self, file):
         """ Processes an XML from from a given directory,
-            and return a list of string lines in key=value format
+            and returns a list of string lines in JSON format
         """
         lines = []
         with open(file, 'r') as f:

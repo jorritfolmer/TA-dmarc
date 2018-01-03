@@ -124,6 +124,7 @@ The add-on doesn't modify, move or delete messages on the IMAP server but instea
    * IMAP server: the imap server to poll
    * Resolve IP: Whether or not to resolve the row source_ip in the DMARC XML aggregate reports
    * Validate XML: Whether or not to validate the DMARC XML against the DMARC XSD
+   * IMAP mailbox: Select the specific IMAP mailbox folder to poll. Default: INBOX
 
 ![Create global account](appserver/static/screenshot_create_global_account.png)
 
