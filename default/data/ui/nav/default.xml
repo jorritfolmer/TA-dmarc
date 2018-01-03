@@ -1,5 +1,6 @@
 <nav search_view="search" color="#26b4e0">
-<view name="inputs" default="true" />
+<view name="welcome" default="true" />
 <view name="configuration"/>
+<view name="inputs" />
 <view name="search" label="Search"/>
 </nav>
