@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.4.1
+
+- Fixed issues that prevented addition of new inputs after clean install of TA-dmarc
+
+## 2.4.0
+
+- Added ability to deviate from the default IMAP mailbox "INBOX"
+- Added XSD validation results in a new field
+- Introduced a relaxed XSD to cover DMARC draft, DMARC rfc and caught-in-the-wild usage
+  (Thanks to Steven Hilton for the Pull Request)
+
 ## 2.3.0
 
 - Added JSON output to better preserve report structure, issue #4. 
