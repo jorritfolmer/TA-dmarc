@@ -33,6 +33,34 @@ class TestDMARCprocessing(unittest.TestCase):
         eq(json_export, expected_result)
         fjson.close()
 
+    def test_xml_multiple_records_file_to_json(self):
+        """Test that the DMARC.org XML example is returned correctly when processed directly in rua2json.
+        https://dmarc.org/wiki/FAQ#I_need_to_implement_aggregate_reports.2C_what_do_they_look_like.3F
+        """
+        eq = self.assertEqual
+        # process basic RUA from dmarc.org
+        d2s = Dir2Splunk(None, helper, None, None, None, None, None)
+        # read in expected JSON output and compare
+        json_export = "".join(d2s.process_xmlfile_to_json_lines("./data/rua_multiple_records.xml"))
+        fjson = open("./data/rua_multiple_records.json", "r")
+        expected_result = fjson.read()
+        eq(json_export, expected_result)
+        fjson.close()
+
+    def test_xml_file_validated_to_json(self):
+        """Test that the DMARC.org XML example is returned correctly when processed directly in rua2json.
+        https://dmarc.org/wiki/FAQ#I_need_to_implement_aggregate_reports.2C_what_do_they_look_like.3F
+        """
+        eq = self.assertEqual
+        # process basic RUA from dmarc.org
+        d2s = Dir2Splunk(None, helper, None, None, None, True, None)
+        # read in expected JSON output and compare
+        json_export = "".join(d2s.process_xmlfile_to_json_lines("./data/rua_multiple_records.xml"))
+        fjson = open("./data/rua_multiple_records.validated.json", "r")
+        expected_result = fjson.read()
+        eq(json_export, expected_result)
+        fjson.close()
+
     def test_basic_xml_file_to_kv(self):
         """Test that the DMARC.org XML example is returned correctly when processed directly in rua2kv.
         https://dmarc.org/wiki/FAQ#I_need_to_implement_aggregate_reports.2C_what_do_they_look_like.3F
@@ -76,33 +104,35 @@ class TestDMARCprocessing(unittest.TestCase):
         # process basic RUA from dmarc.org
         d2s = Dir2Splunk(None, helper, None, None, None, True, None)
         # read in expected XML input and validate with rua.xsd
-        neq(d2s.validate_xml("./data/fail_rua_xsd.xml", "rua_draft-dmarc-base-00-02.xsd"), True)
-        eq(d2s.validate_xml("./data/pass_rua_xsd.xml", "rua_draft-dmarc-base-00-02.xsd"), True)
+        result = d2s.validate_xml("./data/fail_rua_xsd.xml")
+        eq(result["rua_draft-dmarc-base-00-02.xsd"]["result"], "fail")
+        result = d2s.validate_xml("./data/pass_rua_xsd.xml")
+        eq(result["rua_draft-dmarc-base-00-02.xsd"]["result"], "pass")
 
     def test_google_rua_validation(self):
         """Test that the DMARC.org XML example is validated properly.
         https://dmarc.org/wiki/FAQ#I_need_to_implement_aggregate_reports.2C_what_do_they_look_like.3F
         """
         eq = self.assertEqual
-        neq = self.assertNotEqual
         # process basic RUA from dmarc.org
         d2s = Dir2Splunk(None, helper, None, None, None, True, None)
         # read in expected XML input and validate
-        neq(d2s.validate_xml("./data/google_rua.xml", "rua_rfc7489.xsd"), True)
-        neq(d2s.validate_xml("./data/google_rua.xml", "rua_draft-dmarc-base-00-02.xsd"), True)
-        eq(d2s.validate_xml("./data/google_rua.xml", "rua_ta_dmarc_relaxed_v01.xsd"), True)
+        result = d2s.validate_xml("./data/google_rua.xml")
+        eq(result["rua_rfc7489.xsd"]["result"], "fail")
+        eq(result["rua_draft-dmarc-base-00-02.xsd"]["result"], "fail")
+        eq(result["rua_ta_dmarc_relaxed_v01.xsd"]["result"], "pass")
 
     def test_splunk_rua_validation(self):
         """Test that the Splunk RUA sample is validated properly.
         """
         eq = self.assertEqual
-        neq = self.assertNotEqual
         # process basic RUA from dmarc.org
         d2s = Dir2Splunk(None, helper, None, None, None, True, None)
         # read in expected XML input and validate
-        neq(d2s.validate_xml("./data/splunk_rua.xml", "rua_rfc7489.xsd"), True)
-        neq(d2s.validate_xml("./data/splunk_rua.xml", "rua_draft-dmarc-base-00-02.xsd"), True)
-        eq(d2s.validate_xml("./data/splunk_rua.xml", "rua_ta_dmarc_relaxed_v01.xsd"), True)
+        result = d2s.validate_xml("./data/splunk_rua.xml")
+        eq(result["rua_rfc7489.xsd"]["result"], "fail")
+        eq(result["rua_draft-dmarc-base-00-02.xsd"]["result"], "fail")
+        eq(result["rua_ta_dmarc_relaxed_v01.xsd"]["result"], "pass")
 
 
 def _testclasses():
