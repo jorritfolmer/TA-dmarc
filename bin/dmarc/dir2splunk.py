@@ -174,7 +174,7 @@ class Dir2Splunk:
                         self.helper.log_debug("rua2kv: failed to resolve %s" % field)
             if self.do_validate_xml:
                 validstring = "vendor_rua_xsd_validation=\"success\"\n" \
-                    if valid["rua_ta_dmarc_minimal_v01.xsd"]['result'] == "pass" \
+                    if valid["rua_ta_dmarc_relaxed_v01.xsd"]['result'] == "pass" \
                     else "vendor_rua_xsd_validation=\"failure\"\n"
             else:
                 validstring = "vendor_rua_xsd_validation=\"unknown\"\n"
