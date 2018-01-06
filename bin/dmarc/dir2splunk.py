@@ -109,7 +109,7 @@ class Dir2Splunk:
         value = "input=dmarc_dir, file='%s'" % file
         try:
             self.helper.save_check_point(key, value)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Error saving checkpoint data with with exception %s" % str(e))
 
     def rua2kv(self, xmldata, valid=False):
@@ -174,7 +174,8 @@ class Dir2Splunk:
                         self.helper.log_debug("rua2kv: failed to resolve %s" % field)
             if self.do_validate_xml:
                 validstring = "vendor_rua_xsd_validation=\"success\"\n" \
-                    if valid else "vendor_rua_xsd_validation=\"failure\"\n"
+                    if valid["rua_ta_dmarc_relaxed_v01.xsd"]['result'] == "pass" \
+                    else "vendor_rua_xsd_validation=\"failure\"\n"
             else:
                 validstring = "vendor_rua_xsd_validation=\"unknown\"\n"
             result.append("RUA BEGIN\n" + meta + data + validstring)
@@ -186,13 +187,53 @@ class Dir2Splunk:
         """ Returns a string in JSON format based on RUA XML input and its validation status,
             with optionally resolved IP addresses. Resolved checks are validated somewhat.
         """
-
         result = []
+        result_dict = OrderedDict()
+        feedback_list = []
+        feedback_dict = {}
+        validation_dict = {}
+        required_elements = ["report_metadata", "policy_published", "record"]
+        missing_elements = []
+        feedback_dict["feedback"] = feedback_list
 
-        metadata_xml = xmldata.find('report_metadata')
-        metadata = dumps(yahoo.data(metadata_xml))
-        policy_xml = xmldata.find('policy_published')
-        policy = dumps(yahoo.data(policy_xml))
+        if self.do_validate_xml:
+            minimal_xsd = validation_result.pop("rua_ta_dmarc_minimal_v01.xsd")
+            if minimal_xsd["result"] != "pass":
+                self.helper.log_warning("rua2json: report did not contain a feedback root element")
+                validation_dict["vendor_rua_xsd_validations"] = minimal_xsd
+                result.append(dumps(validation_dict))
+                return result
+            else:
+                print validation_result
+                validation_dict["vendor_rua_xsd_validations"] = validation_result
+        else:
+            validation_dict["vendor_rua_xsd_validations"] = "None"
+            pass
+
+        # Add all elements, requiring certain elements are present
+        try:
+            version = xmldata.find('version')
+            feedback_list.append(yahoo.data(version))
+        except Exception:
+            self.helper.log_debug("rua2json: report did not contain a version XML element")
+        for required_element in required_elements:
+            try:
+                element = xmldata.find(required_element)
+                feedback_list.append(yahoo.data(element))
+            except Exception:
+                self.helper.log_warning("rua2json: report did not contain a required XML element, %s" % required_element)
+                missing_elements.append(required_element)
+
+        if len(missing_elements):  # Return element error if any required elements are missing
+            # TODO validate missing element output
+            feedback_dict.clear()  # this line could be omitted, and the result could include additional information
+            validation_dict["vendor_rua_missing_elements"] = missing_elements
+            result.append(dumps(validation_dict))
+            return result
+        else:                      # Otherwise, remove the 'record' before the loop through all records
+            feedback_list.pop()
+
+        # Validation checks complete, time to add all the records
 
         records = xmldata.findall("record")
         self.helper.log_debug("rua2json: report_id %s has %d records"
@@ -200,7 +241,6 @@ class Dir2Splunk:
         for record in records:
             data_ip = record.findtext('row/source_ip')
             row_tag = record.find("row")
-            xsd_validation = ''
             if self.do_resolve:
                 try:
                     self.helper.log_debug("rua2json: resolving %s" % data_ip)
@@ -211,14 +251,12 @@ class Dir2Splunk:
                         ip_resolution.text = resolve[0]
                 except Exception:
                     self.helper.log_debug("rua2json: failed to resolve %s" % data_ip)
-            if self.do_validate_xml:
-                if validation_result == True:
-                    xsd_validation = ", \"vendor_rua_xsd_validation\": \"success\""
-                else:
-                    xsd_validation = ", \"vendor_rua_xsd_validation\": \"failure\", \"vendor_rua_xsd_validation_error\": \"" + validation_result + "\""
-            data = dumps(yahoo.data(record))
-            # Aggregate report metadata, policy, record and xsd_validation field
-            result.append("{\"feedback\": [" + metadata + "," + policy + "," + data + "]" + xsd_validation + "}\n")
+            feedback_list.append(yahoo.data(record))
+            # Aggregate report metadata, policy, record and xsd_validation
+            result_dict.update(feedback_dict)
+            result_dict.update(validation_dict)
+            result.append(dumps(result_dict) + "\n")
+            feedback_list.pop()  # Remove record before adding next record to list
         self.helper.log_debug("rua2json: report_id %s finished parsing"
                               % xmldata.findtext("report_metadata/report_id", default=""))
         return result
@@ -231,7 +269,7 @@ class Dir2Splunk:
         members = []
         try:
             zf = zipfile.ZipFile(file, 'r')
-        except Exception, e:
+        except Exception as e:
             self.helper.log_warning("process_zipfile: ignoring bad zip file %s due to %s" % (file, e))
             return members
         else:
@@ -262,7 +300,7 @@ class Dir2Splunk:
             try:
                 # Protect against gzip bombs by limiting decompression to max_size
                 unz = zobj.decompress(data, self.max_size)
-            except Exception, e:
+            except Exception as e:
                 self.helper.log_warning("process_gzfile: ignoring bad gz file %s because of %s" % (file,e))
             else:
                 if zobj.unconsumed_tail:
@@ -293,7 +331,7 @@ class Dir2Splunk:
             try:
                 # To protect against various XML threats we use the parse function from defusedxml.ElementTree
                 defuse_parse(f)
-            except Exception, e:
+            except Exception as e:
                 self.helper.log_warning("process_xmlfile_to_json_lines: XML parse error in file %s with exception %s"
                                         % (file, e))
             else:
@@ -318,7 +356,7 @@ class Dir2Splunk:
             try:
                 # To protect against various XML threats we use the parse function from defusedxml.ElementTree
                 xmldata = defuse_parse(f)
-            except Exception, e:
+            except Exception as e:
                 self.helper.log_warning("process_xmlfile_to_lines: XML parse error in file %s with exception %s"
                                         % (file, e))
             else:
@@ -334,6 +372,7 @@ class Dir2Splunk:
 
     def process_xmlfile(self, file):    
         """ Wrapper function to process an XML file based on self.output_format """
+        # TODO set the filename as the source; possibly adding archive and source email information
         lines = []
         if self.output_format == "kv":
             lines = self.process_xmlfile_to_lines(file)
@@ -342,37 +381,54 @@ class Dir2Splunk:
         return lines
 
 
-    def validate_xml(self, file, xsdfile="rua_ta_dmarc_relaxed_v01.xsd"):
-        """ Validate DMARC XML files against our own relaxed DMARC XML schema definition file (xsd)
-            Returns True or an escaped exception string
+    def validate_xml(self, file):
+        """ Validate DMARC XML files against an XML schema definition file (xsd)
+            Returns a dict containing the XSD filename, result, and an optional informational string
         """
         dmarc_path = os.path.dirname(__file__)
-        xsdfile = os.path.join(dmarc_path, xsdfile)
-        try:
-            xmldata = open(file, 'r').read()
-            xsddata = open(xsdfile, 'r').read()
-        except Exception as e:
-            self.helper.log_warning("validate_xml: xsd validation opening with %s" % str(e))
-            res = str(e).replace('"', '\\"').replace('\n', '\\n')
-            return res
-        try:
-            xml = etree.XML(xmldata)
-            xsd = etree.XML(xsddata)
-            xmlschema = etree.XMLSchema(xsd)
-        except Exception as e:
-            self.helper.log_warning("validate_xml: xml parse error for file %s with %s" % (file, str(e)))
-            res = str(e).replace('"', '\\"').replace('\n', '\\n')
-            return res
-        try:
-            xmlschema.assertValid(xml)
-        except Exception as e:
-            self.helper.log_warning("validate_xml: xsd validation failed against %s for file %s with %s" % (os.path.basename(xsdfile), file, str(e)))
-            res = str(e).replace('"', '\\"').replace('\n', '\\n')
-            return res
-        else:
-            self.helper.log_debug("validate_xml: xsd validation successful against %s for file %s" % (os.path.basename(xsdfile), file))
-            return True
-        return False
+        res = {}
+        info = {}
+        xsdfilelist = ["rua_ta_dmarc_minimal_v01.xsd",
+                       "rua_ta_dmarc_relaxed_v01.xsd",
+                       "rua_draft-dmarc-base-00-02.xsd",
+                       "rua_rfc7489.xsd"]
+
+        for xsdfile in xsdfilelist:
+            xsdfile_long = os.path.join(dmarc_path, xsdfile)
+
+            try:
+                xmldata = open(file, 'r').read()
+                xsddata = open(xsdfile_long, 'r').read()
+            except Exception as e:
+                self.helper.log_warning("validate_xml: xsd validation opening with %s" % str(e))
+                info["result"] = "file error"
+                info["info"] = "%s" % str(e)
+                res[xsdfile] = info.copy()
+                continue
+            try:
+                xml = etree.XML(xmldata)
+                xsd = etree.XML(xsddata)
+                xmlschema = etree.XMLSchema(xsd)
+            except Exception as e:
+                self.helper.log_warning("validate_xml: xml parse error for file %s with %s" % (file, str(e)))
+                info["result"] = "parse error"
+                info["info"] = "%s" % str(e)
+                res[xsdfile] = info.copy()
+                continue
+            try:
+                xmlschema.assertValid(xml)
+            except Exception as e:
+                self.helper.log_warning("validate_xml: xsd validation failed against %s for file %s with %s" % (xsdfile, file, str(e)))
+                info["result"] = "fail"
+                info["info"] = "%s" % str(e)
+                res[xsdfile] = info.copy()
+                continue
+            else:
+                self.helper.log_debug("validate_xml: xsd validation successful against %s for file %s" % (xsdfile, file))
+                info["result"] = "pass"
+                res[xsdfile] = info.copy()
+        return res
+
 
     def check_dir(self):
         """ Check if self.dir is readable """
@@ -390,7 +446,7 @@ class Dir2Splunk:
                                               source=self.helper.get_input_type(), sourcetype=self.helper.get_sourcetype(),
                                               done=True, unbroken=True)
                 self.ew.write_event(event)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Exception in write_event(): %s" % e)
 
     def process_incoming(self):
