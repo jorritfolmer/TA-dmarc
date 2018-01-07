@@ -135,13 +135,9 @@ Second, because the reverse DNS record cannot really be trusted, another forward
 
 ### Validate XML setting
 
-DMARC XML aggregate reports can be validated against the DMARC RUA XML schema definition (XSD).
+DMARC XML aggregate reports can be validated against multiple DMARC RUA XML schema definition versions (XSD)
 This can be configured in the input with the checkbox "Validate XML"
-The result of the validation is added as new event fields in Splunk:
-
-- `vendor_vendor_rua_xsd_validation`: success or failure
-- `vendor_vendor_rua_xsd_validation_error`": validation error text, e.g: 
-  > Element 'sp': [facet 'enumeration'] The value '' is not an element of the set {'none', 'quarantine', 'reject'}., line 19
+The result of the validations is added as new event fields in Splunk: `vendor_rua_xsd_validations`
 
 ## DMARC aggregate reports
 
@@ -252,7 +248,10 @@ From the DMARC XML sample above, the following fields are created:
 |src_ip                                       |192.0.2.78           | CIM
 |user                                         |example.com          | CIM
 |tag                                          |authentication, insecure | CIM
-|vendor_rua_xsd_validation                    |success              | Add-on enrichment
+|vendor_rua_xsd_validations. rua_draft-dmarc-base-00-02.xsd.result  | pass   | Add-on enrichment
+|vendor_rua_xsd_validations. rua_rfc7489.xsd.result                 | fail   | Add-on enrichment
+|vendor_rua_xsd_validations. rua_rfc7489.xsd.info                   | Element 'report_metadata': This element is not expected. Expected is ( version )., line 3	 | Add-on enrichment
+|vendor_rua_xsd_validations. rua_ta_dmarc_relaxed_v01.xsd.result    | pass   | Add-on enrichment
 
 ## Advanced
 
