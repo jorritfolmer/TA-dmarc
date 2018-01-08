@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.5.0
+
+- Only process actual DMARC aggregate reports and ignore other XML files
+- Changed validation result field to include multiple XSD validations
+
 ## 2.4.1
 
 - Fixed issues that prevented addition of new inputs after clean install of TA-dmarc
