@@ -46,7 +46,7 @@ class ModInputdmarc_directory_json(modinput_wrapper.base_modinput.BaseModInput):
         For customized inputs, hard code the arguments here to hide argument detail from users.
         For other input types, arguments should be get from input_module. Defining new input types could be easier.
         """
-        scheme.add_argument(smi.Argument("directory", title="Directory",
+        scheme.add_argument(smi.Argument("dmarc_directory", title="Directory",
                                          description="Directory containing DMARC aggregate reports",
                                          required_on_create=True,
                                          required_on_edit=False))

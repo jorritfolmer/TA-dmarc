@@ -23,7 +23,7 @@ def validate_input(helper, definition):
     except Exception:
         raise ValueError("Error: quiet_time not an integer")
 
-    d2s = Dir2Splunk(None, helper, opt_dmarc_directory, opt_quiet_time, opt_resolve_ip, opt_validate_xml)
+    d2s = Dir2Splunk(None, helper, opt_dmarc_directory, opt_quiet_time, opt_resolve_ip, opt_validate_xml, opt_output_format, False)
     d2s.check_dir()
 
 

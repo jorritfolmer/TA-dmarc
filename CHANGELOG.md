@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.5.1
+
+- Fixed issues that prevented addition of new directory inputs
+
 ## 2.5.0
 
 - Only process actual DMARC aggregate reports and ignore other XML files
