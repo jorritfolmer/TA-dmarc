@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.1
+
+- Improved exception handling of character sets handling
+
 ## 2.6.0
 
 - Added support for other character sets than utf-8, iso-8859-1

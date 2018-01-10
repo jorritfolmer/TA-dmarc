@@ -433,23 +433,31 @@ class Dir2Splunk:
             limited Splunk encoding support
             Returns the path of the transcoded file in the tmp dir """
         with open(file, 'r') as f:
-            # Determine xml encoding
-            xmldata = f.read()
-            encoding = autoDetectXMLEncoding(xmldata)
+            try:
+                # Determine xml encoding
+                xmldata = f.read()
+                encoding = autoDetectXMLEncoding(xmldata)
+            except Exception as e: 
+                self.helper.log_warning("fix_xml_encoding: file %s charset cannot be determined with exception %s" % (file, str(e)))
+                return file
             self.helper.log_debug("fix_xml_encoding: file %s has encoding %s" % (file, encoding))
             # Only convert it if it differs from the ones already supported by Splunk's libxml2
             if encoding.lower() == 'utf_8' or encoding.lower() == 'utf-8':
                 return file
-            elif encoding.lower == 'utf_16_be' or encoding.lower == 'utf_16_le':
+            elif encoding.lower() == 'utf_16_be' or encoding.lower() == 'utf_16_le':
                 return file
-            elif encoding.lower == 'iso-8859-1':
+            elif encoding.lower() == 'iso-8859-1':
                 return file
-            elif encoding.lower == 'us-ascii':
+            elif encoding.lower() == 'us-ascii':
                 return file
             else:
                 self.helper.log_debug("fix_xml_encoding: encoding %s in utf-8" % file)
-                xmldata = xmldata.decode(encoding).encode('utf-8')
-                xmldata = xmldata.replace(" encoding=\"" + encoding + "\"" ,"")
+                try:
+                    xmldata = xmldata.decode(encoding).encode('utf-8')
+                    xmldata = xmldata.replace(" encoding=\"" + encoding + "\"" ,"")
+                except Exception as e:
+                    self.helper.log_warn("fix_xml_encoding: file %s charset cannot be converted with exception %s" % (file, str(e)))
+                    return file
                 newfile = os.path.join(self.tmp_dir, "transcoded_" + os.path.basename(file))
                 with open(newfile, "w") as nf:
                     self.helper.log_debug("fix_xml_encoding: writing to %s" % newfile)
