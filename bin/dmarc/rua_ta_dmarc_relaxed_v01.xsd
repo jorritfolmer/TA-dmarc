@@ -47,11 +47,17 @@
     <!-- The policy to apply to messages from the domain. -->
     <xs:element name="p" type="DispositionType"/>
     <!-- The policy to apply to messages from subdomains. -->
-    <xs:element name="sp" type="DispositionType"/>
+    <xs:element name="sp" type="DispositionType" minOccurs="0"/>
     <!-- The percent of messages to which policy applies. -->
     <xs:element name="pct" type="xs:integer"/>
     <!-- Failure reporting options in effect. -->
     <xs:element name="fo" type="xs:string" minOccurs="0"/>
+    <!-- Observed 'rf', but included other unexpected tags just in case. -->
+    <xs:element name="rf" type="xs:string" minOccurs="0"/>
+    <xs:element name="ri" type="xs:string" minOccurs="0"/>
+    <xs:element name="rua" type="xs:string" minOccurs="0"/>
+    <xs:element name="ruf" type="xs:string" minOccurs="0"/>
+    <xs:element name="v" type="xs:string" minOccurs="0"/>
   </xs:all>
 </xs:complexType>
 <!-- The DMARC-aligned authentication result. -->
@@ -59,6 +65,9 @@
   <xs:restriction base="xs:string">
     <xs:enumeration value="pass"/>
     <xs:enumeration value="fail"/>
+    <!-- Observed improper case in a few reports-->
+    <xs:enumeration value="Pass"/>
+    <xs:enumeration value="Fail"/>
   </xs:restriction>
 </xs:simpleType>
 <!-- Reasons that may affect DMARC disposition or execution thereof. -->
@@ -83,7 +92,8 @@
 <xs:complexType name="PolicyEvaluatedType">
   <xs:sequence>
     <xs:element name="disposition" type="DispositionType"/>
-    <xs:element name="dkim" type="DMARCResultType"/>
+    <!-- DKIM optional due to AOL reports for messages without DKIM signatures -->
+    <xs:element name="dkim" type="DMARCResultType" minOccurs="0"/>
     <xs:element name="spf" type="DMARCResultType"/>
     <xs:element name="reason" type="PolicyOverrideReason" minOccurs="0" maxOccurs="unbounded"/>
   </xs:sequence>
@@ -155,8 +165,10 @@
     <xs:enumeration value="fail"/>
     <xs:enumeration value="softfail"/>
     <!-- "TempError" commonly implemented as "unknown". -->
+    <xs:enumeration value="unknown"/>
     <xs:enumeration value="temperror"/>
     <!-- "PermError" commonly implemented as "error". -->
+    <xs:enumeration value="error"/>
     <xs:enumeration value="permerror"/>
   </xs:restriction>
 </xs:simpleType>
@@ -176,7 +188,7 @@
     <!-- There may be no DKIM signatures, or multiple DKIM signatures. -->
     <xs:element name="dkim" type="DKIMAuthResultType" minOccurs="0" maxOccurs="unbounded"/>
     <!-- There will always be at least one SPF result. -->
-    <xs:element name="spf" type="SPFAuthResultType" minOccurs="1" maxOccurs="unbounded"/>
+    <xs:element name="spf" type="SPFAuthResultType" maxOccurs="unbounded"/>
   </xs:sequence>
 </xs:complexType>
 <!-- This element contains all the authentication results that were evaluated by the receiving system for the given set of messages. -->

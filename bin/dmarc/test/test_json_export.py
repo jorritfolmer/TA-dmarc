@@ -148,6 +148,18 @@ class TestDMARCprocessing(unittest.TestCase):
         eq(result["rua_draft-dmarc-base-00-02.xsd"]["result"], "fail")
         eq(result["rua_ta_dmarc_relaxed_v01.xsd"]["result"], "pass")
 
+    def test_aol_rua_validation(self):
+        """Test that the Splunk RUA sample is validated properly.
+        """
+        eq = self.assertEqual
+        # process basic RUA from dmarc.org
+        d2s = Dir2Splunk(None, helper, None, None, None, True, None)
+        # read in expected XML input and validate
+        result = d2s.validate_xml("./data/aol_rua.xml")
+        eq(result["rua_rfc7489.xsd"]["result"], "fail")
+        eq(result["rua_draft-dmarc-base-00-02.xsd"]["result"], "fail")
+        eq(result["rua_ta_dmarc_relaxed_v01.xsd"]["result"], "pass")
+
 
 def _testclasses():
     mod = sys.modules[__name__]
