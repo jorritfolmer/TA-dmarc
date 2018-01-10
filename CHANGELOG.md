@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.0
+
+- Added support for other character sets than utf-8, iso-8859-1
+
 ## 2.5.1
 
 - Fixed issues that prevented addition of new directory inputs
