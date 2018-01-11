@@ -199,8 +199,6 @@ class Dir2Splunk:
             validation_dict["vendor_rua_xsd_validations"] = validation_result
         else:
             validation_dict["vendor_rua_xsd_validations"] = "None"
-        source_filename_dict = {}
-        source_filename_dict["source_filename"] = self.source_filename
         # Get metadata elements from aggregate report
         meta_elements = ["report_metadata", "policy_published", "version"]
         for meta_element in meta_elements:
@@ -231,7 +229,6 @@ class Dir2Splunk:
             # Aggregate report metadata, policy, record and xsd_validation
             result_dict.update(feedback_dict)
             result_dict.update(validation_dict)
-            result_dict.update(source_filename_dict)
             result.append(dumps(result_dict) + "\n")
             feedback_list.pop()  # Remove record before adding next record to list
         self.helper.log_debug("rua2json: report_id %s finished parsing"
@@ -462,7 +459,7 @@ class Dir2Splunk:
         try:
             for line in lines:
                 event = self.helper.new_event(line, time=None, host=None, index=self.helper.get_output_index(),
-                                              source=self.helper.get_input_type(), sourcetype=self.helper.get_sourcetype(),
+                                              source=self.source_filename, sourcetype=self.helper.get_sourcetype(),
                                               done=True, unbroken=True)
                 self.ew.write_event(event)
         except Exception as e:
