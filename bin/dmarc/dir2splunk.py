@@ -59,6 +59,7 @@ class Dir2Splunk:
         self.do_validate_xml = do_validate_xml
         self.output_format   = output_format
         self.tmp_dir         = None
+        self.source_filename = ""
 
     def list_incoming(self):
         """ Returns a list of files for the incoming directory """
@@ -198,6 +199,8 @@ class Dir2Splunk:
             validation_dict["vendor_rua_xsd_validations"] = validation_result
         else:
             validation_dict["vendor_rua_xsd_validations"] = "None"
+        source_filename_dict = {}
+        source_filename_dict["source_filename"] = self.source_filename
         # Get metadata elements from aggregate report
         meta_elements = ["report_metadata", "policy_published", "version"]
         for meta_element in meta_elements:
@@ -228,6 +231,7 @@ class Dir2Splunk:
             # Aggregate report metadata, policy, record and xsd_validation
             result_dict.update(feedback_dict)
             result_dict.update(validation_dict)
+            result_dict.update(source_filename_dict)
             result.append(dumps(result_dict) + "\n")
             feedback_list.pop()  # Remove record before adding next record to list
         self.helper.log_debug("rua2json: report_id %s finished parsing"
@@ -346,6 +350,7 @@ class Dir2Splunk:
     def process_xmlfile(self, file):    
         """ Wrapper function to process an XML file based on self.output_format """
         # TODO set the filename as the source; possibly adding archive and source email information
+        self.source_filename = os.path.basename(file)
         lines = []
         if self.output_format == "kv":
             lines = self.process_xmlfile_to_lines(file)
