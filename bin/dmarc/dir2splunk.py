@@ -61,6 +61,7 @@ class Dir2Splunk:
         self.do_validate_xml = do_validate_xml
         self.output_format   = output_format
         self.tmp_dir         = None
+        self.source_filename = ""
 
     def list_incoming(self):
         """ Returns a list of files for the incoming directory """
@@ -347,6 +348,7 @@ class Dir2Splunk:
 
     def process_xmlfile(self, file):    
         """ Wrapper function to process an XML file based on self.output_format """
+        self.source_filename = os.path.basename(file)
         lines = []
         if self.output_format == "kv":
             lines = self.process_xmlfile_to_lines(file)
@@ -437,7 +439,7 @@ class Dir2Splunk:
                 # Determine xml encoding
                 xmldata = f.read()
                 encoding = autoDetectXMLEncoding(xmldata)
-            except Exception as e: 
+            except Exception as e:
                 self.helper.log_warning("fix_xml_encoding: file %s charset cannot be determined with exception %s" % (file, str(e)))
                 return file
             self.helper.log_debug("fix_xml_encoding: file %s has encoding %s" % (file, encoding))
@@ -464,10 +466,10 @@ class Dir2Splunk:
                     nf.write(xmldata)
                     return newfile
                 return file
-      
+
 
     def validate_xml(self, file):
-        """ Main XML validation function for DMARC XML files 
+        """ Main XML validation function for DMARC XML files
             Returns a dict containing the validations result (bool), and an optional informational string
         """
         # Validate XML against various RUA XSDs
@@ -497,7 +499,7 @@ class Dir2Splunk:
         try:
             for line in lines:
                 event = self.helper.new_event(line, time=None, host=None, index=self.helper.get_output_index(),
-                                              source=self.helper.get_input_type(), sourcetype=self.helper.get_sourcetype(),
+                                              source=self.source_filename, sourcetype=self.helper.get_sourcetype(),
                                               done=True, unbroken=True)
                 self.ew.write_event(event)
         except Exception as e:
