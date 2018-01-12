@@ -10,6 +10,7 @@ import zlib
 from collections import OrderedDict
 from dmarc.helper import create_tmp_dir
 from dmarc.helper import remove_tmp_dir
+from dmarc.autodetectxmlencoding import autoDetectXMLEncoding
 import base64
 from json import dumps
 from xmljson import yahoo
@@ -47,6 +48,7 @@ class Dir2Splunk:
 
     # Class variables:
     max_size        = 100000000
+    max_files       = 100
 
     def __init__(self, ew, helper, dir, quiet_secs, do_resolve, do_validate_xml, output_format, do_checkpoint=False):
         # Instance variables:
@@ -346,7 +348,6 @@ class Dir2Splunk:
 
     def process_xmlfile(self, file):    
         """ Wrapper function to process an XML file based on self.output_format """
-        # TODO set the filename as the source; possibly adding archive and source email information
         self.source_filename = os.path.basename(file)
         lines = []
         if self.output_format == "kv":
@@ -370,7 +371,7 @@ class Dir2Splunk:
             xmldata = open(file, 'r').read()
             xsddata = open(xsdfile_long, 'r').read()
         except Exception as e:
-            self.helper.log_warning("validate_xml: xsd validation opening with %s" % str(e))
+            self.helper.log_warning("validate_xml_xsd: xsd validation opening with %s" % str(e))
             info["result"] = "fail"
             info["info"] = "%s" % str(e)
             return info
@@ -380,7 +381,7 @@ class Dir2Splunk:
             xsd = etree.XML(xsddata)
             xmlschema = etree.XMLSchema(xsd)
         except Exception as e:
-            self.helper.log_warning("validate_xml: xml parse error for file %s with %s" % (file, str(e)))
+            self.helper.log_warning("validate_xml_xsd: xml parse error for file %s with %s" % (file, str(e)))
             info["result"] = "fail"
             info["info"] = "%s" % str(e)
             return info
@@ -388,12 +389,12 @@ class Dir2Splunk:
         try:
             xmlschema.assertValid(xml)
         except Exception as e:
-            self.helper.log_warning("validate_xml: xsd validation failed against %s for file %s with %s" % (xsdfile, file, str(e)))
+            self.helper.log_warning("validate_xml_xsd: xsd validation failed against %s for file %s with %s" % (xsdfile, file, str(e)))
             info["result"] = "fail"
             info["info"] = "%s" % str(e)
             return info
         else:
-            self.helper.log_debug("validate_xml: xsd validation successful against %s for file %s" % (xsdfile, file))
+            self.helper.log_debug("validate_xml_xsd: xsd validation successful against %s for file %s" % (xsdfile, file))
             info["result"] = "pass";
             return info
 
@@ -429,8 +430,46 @@ class Dir2Splunk:
         return False
 
 
+    def fix_xml_encoding(self, file):
+	""" Check encoding of provided (xml) file, and transcode if necessary to work around
+            limited Splunk encoding support
+            Returns the path of the transcoded file in the tmp dir """
+        with open(file, 'r') as f:
+            try:
+                # Determine xml encoding
+                xmldata = f.read()
+                encoding = autoDetectXMLEncoding(xmldata)
+            except Exception as e:
+                self.helper.log_warning("fix_xml_encoding: file %s charset cannot be determined with exception %s" % (file, str(e)))
+                return file
+            self.helper.log_debug("fix_xml_encoding: file %s has encoding %s" % (file, encoding))
+            # Only convert it if it differs from the ones already supported by Splunk's libxml2
+            if encoding.lower() == 'utf_8' or encoding.lower() == 'utf-8':
+                return file
+            elif encoding.lower() == 'utf_16_be' or encoding.lower() == 'utf_16_le':
+                return file
+            elif encoding.lower() == 'iso-8859-1':
+                return file
+            elif encoding.lower() == 'us-ascii':
+                return file
+            else:
+                self.helper.log_debug("fix_xml_encoding: encoding %s in utf-8" % file)
+                try:
+                    xmldata = xmldata.decode(encoding).encode('utf-8')
+                    xmldata = xmldata.replace(" encoding=\"" + encoding + "\"" ,"")
+                except Exception as e:
+                    self.helper.log_warn("fix_xml_encoding: file %s charset cannot be converted with exception %s" % (file, str(e)))
+                    return file
+                newfile = os.path.join(self.tmp_dir, "transcoded_" + os.path.basename(file))
+                with open(newfile, "w") as nf:
+                    self.helper.log_debug("fix_xml_encoding: writing to %s" % newfile)
+                    nf.write(xmldata)
+                    return newfile
+                return file
+
+
     def validate_xml(self, file):
-        """ Mail XML validation function for DMARC XML files 
+        """ Main XML validation function for DMARC XML files
             Returns a dict containing the validations result (bool), and an optional informational string
         """
         # Validate XML against various RUA XSDs
@@ -456,6 +495,7 @@ class Dir2Splunk:
 
 
     def write_event(self, lines):
+        # TODO set the filename as the source; possibly adding archive and source email information
         try:
             for line in lines:
                 event = self.helper.new_event(line, time=None, host=None, index=self.helper.get_output_index(),
@@ -480,6 +520,7 @@ class Dir2Splunk:
                 if ext == ".zip":
                     self.helper.log_info("Start processing zip file %s" % file)
                     for xmlfile in self.process_zipfile(file):
+                        xmlfile = self.fix_xml_encoding(xmlfile)
                         if self.is_valid_rua_xmlfile(xmlfile):
                             lines = self.process_xmlfile(xmlfile)
                             self.write_event(lines)
@@ -488,6 +529,7 @@ class Dir2Splunk:
                 elif ext == ".gz":
                     self.helper.log_info("Start processing gz file %s" % file)
                     for xmlfile in self.process_gzfile(file):
+                        xmlfile = self.fix_xml_encoding(xmlfile)
                         if self.is_valid_rua_xmlfile(xmlfile):
                             lines = self.process_xmlfile(xmlfile)
                             self.write_event(lines)
@@ -495,6 +537,7 @@ class Dir2Splunk:
                             self.helper.log_debug("process_incoming: ignoring invalid xml file %s from %s" % (xmlfile, file))
                 elif ext == ".xml":
                     self.helper.log_info("Start processing xml file %s" % file)
+                    file = self.fix_xml_encoding(file)
                     if self.is_valid_rua_xmlfile(file):
                         lines = self.process_xmlfile(file)
                         self.write_event(lines)
