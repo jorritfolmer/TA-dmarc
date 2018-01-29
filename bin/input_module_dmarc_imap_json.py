@@ -50,3 +50,18 @@ def collect_events(helper, ew):
                 d2s.process_incoming()
     finally:
         remove_tmp_dir(helper, tmp_dir)
+
+# PSEUDOCODE for refactor:
+#
+# mailbox = DMARCMailbox(imap, ssl, account)
+# for uid, message in mailbox.get_dmarc_messages()
+#     mail = DMARCMail(message)
+#     dkimvrfy = DMARCMail.dkim_verify()
+#     for file in mail.get_dmarc_attachments()
+#         rua = DMARCfile(file)
+#         res_xmlvalidation = rua.get_xml_validation()
+#         res_feedback = rua.get_rua_feedback()
+#         res_dkimvrfy = dkimvrfy
+#         event = DMARCEvent(res_feedback, res_xmlvalidation, res_dkimvrfy)
+#         event.save_event()
+#     mailbox.save_checkpoint(uid)

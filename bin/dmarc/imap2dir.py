@@ -2,6 +2,8 @@ import os
 import ssl
 import email
 from imapclient import IMAPClient
+import dkim
+import dns
 
 
 # Copyright 2017-2018 Jorrit Folmer
@@ -74,9 +76,9 @@ class Imap2Dir:
             self.helper.log_debug('get_dmarc_messages: successfully connected to %s' % self.opt_imap_server)
             self.server.login(self.opt_global_account["username"], self.opt_global_account["password"])
             info = self.server.select_folder(self.opt_imap_mailbox)
-            self.helper.log_debug('get_dmarc_messages: %d messages in folder %s' % (info['EXISTS'], self.opt_imap_mailbox))
+            self.helper.log_info('get_dmarc_messages: %d messages in folder %s' % (info['EXISTS'], self.opt_imap_mailbox))
             messages = self.server.search('SUBJECT "Report domain:"')
-            self.helper.log_debug('get_dmarc_messages: %d messages in folder %s match subject "Report domain:"' % (len(messages), self.opt_imap_mailbox))
+            self.helper.log_info('get_dmarc_messages: %d messages in folder %s match subject "Report domain:"' % (len(messages), self.opt_imap_mailbox))
         return messages
 
 
@@ -99,12 +101,31 @@ class Imap2Dir:
             return filename
      
 
+    def dkim_verify(self, msg, uid):
+        """ Verify DKIM signature(s) from a given RFC822 message
+            Returns a result dict """
+        try:
+            obj = dkim.DKIM(msg)
+        except Exception, e:
+            self.helper.log_info('dkim_verify: exception verifying msg uid %s with %s' % (uid, str(e)))
+        else:
+            sigheaders = [(x,y) for x,y in obj.headers if x.lower() == b"dkim-signature"]
+            self.helper.log_debug('dkim_verify: msg uid %s has %d DKIM signatures' % (uid, len(sigheaders)))
+            for i in range(0, len(sigheaders)):
+                res = obj.verify(i)
+                if res:
+                    self.helper.log_debug('dkim_verify: msg uid %s signature %d ok from domain %s selector %s' % (uid, i, obj.domain, obj.selector))
+                else:
+                    self.helper.log_debug('dkim_verify: msg uid %s signature %d fail from domain %s selector %s' % (uid, i, obj.domain, obj.selector))
+        
+
     def save_reports_from_message_bodies(self, response):
-        """ Find zip and gzip attachments in the response, and write them to disk 
+        """ Find xml, zip and gzip attachments in the response, and write them to disk 
             Return a list of filenames that were written
         """
         filelist = []
         for uid, data in response.items():
+            self.dkim_verify(data['RFC822'], uid)
             msg = email.message_from_string(data['RFC822'])
             if msg.is_multipart():
                 self.helper.log_debug('save_reports_from_message_bodies: start multipart processing of msg uid  %d' % uid)
