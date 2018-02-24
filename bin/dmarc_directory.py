@@ -47,7 +47,7 @@ class ModInputdmarc_directory(modinput_wrapper.base_modinput.BaseModInput):
         For other input types, arguments should be get from input_module. Defining new input types could be easier.
         """
         scheme.add_argument(smi.Argument("dmarc_directory", title="Directory",
-                                         description="Location where DMARC aggregate report files are dropped",
+                                         description="Directory containing DMARC aggregate reports",
                                          required_on_create=True,
                                          required_on_edit=False))
         scheme.add_argument(smi.Argument("quiet_time", title="Quiet time",
@@ -61,6 +61,10 @@ class ModInputdmarc_directory(modinput_wrapper.base_modinput.BaseModInput):
         scheme.add_argument(smi.Argument("validate_xml", title="Validate XML",
                                          description="Validate the aggregate report XML against the DMARC XSD. Results are included in the field vendor_rua_xsd_validation.",
                                          required_on_create=False,
+                                         required_on_edit=False))
+        scheme.add_argument(smi.Argument("output_format", title="Output format",
+                                         description="",
+                                         required_on_create=True,
                                          required_on_edit=False))
         return scheme
 

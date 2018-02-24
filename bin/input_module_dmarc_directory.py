@@ -16,7 +16,7 @@ def validate_input(helper, definition):
     opt_quiet_time      = definition.parameters.get('quiet_time', None)
     opt_resolve_ip      = definition.parameters.get('resolve_ip', None)
     opt_validate_xml    = definition.parameters.get('validate_xml', None)
-    opt_output_format   = "kv"
+    opt_output_format   = definition.parameters.get('output_format', 'json')
 
     try:
         int(opt_quiet_time)   
@@ -34,7 +34,7 @@ def collect_events(helper, ew):
     opt_quiet_time      = int(helper.get_arg('quiet_time'))
     opt_resolve_ip      = helper.get_arg('resolve_ip')
     opt_validate_xml    = helper.get_arg('validate_xml')
-    opt_output_format   = "kv"
+    opt_output_format   = helper.get_arg('output_format')
 
     loglevel   = helper.get_log_level()
     helper.set_log_level(loglevel)

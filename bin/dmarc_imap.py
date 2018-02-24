@@ -33,7 +33,7 @@ class ModInputdmarc_imap(modinput_wrapper.base_modinput.BaseModInput):
     def get_scheme(self):
         """overloaded splunklib modularinput method"""
         scheme = super(ModInputdmarc_imap, self).get_scheme()
-        scheme.title = ("DMARC mailbox")
+        scheme.title = ("DMARC imap")
         scheme.description = ("Go to the add-on\'s configuration UI and configure modular inputs under the Inputs menu.")
         scheme.use_external_validation = True
         scheme.streaming_mode_xml = True
@@ -62,6 +62,18 @@ class ModInputdmarc_imap(modinput_wrapper.base_modinput.BaseModInput):
                                          description="Validate the aggregate reports against the DMARC XSD. Results are included in the field vendor_rua_xsd_validation.",
                                          required_on_create=False,
                                          required_on_edit=False))
+        scheme.add_argument(smi.Argument("validate_dkim", title="Validate DKIM",
+                                         description="(Beta) Validate the DKIM signatures in the mail headers. Results are currently only available in DEBUG log.",
+                                         required_on_create=False,
+                                         required_on_edit=False))
+        scheme.add_argument(smi.Argument("imap_mailbox", title="IMAP mailbox",
+                                         description="Select the IMAP mailbox to poll. Default: INBOX",
+                                         required_on_create=True,
+                                         required_on_edit=False))
+        scheme.add_argument(smi.Argument("output_format", title="Output format",
+                                         description="",
+                                         required_on_create=True,
+                                         required_on_edit=False))
         return scheme
 
     def get_app_name(self):
@@ -84,6 +96,7 @@ class ModInputdmarc_imap(modinput_wrapper.base_modinput.BaseModInput):
         checkbox_fields = []
         checkbox_fields.append("resolve_ip")
         checkbox_fields.append("validate_xml")
+        checkbox_fields.append("validate_dkim")
         return checkbox_fields
 
     def get_global_checkbox_fields(self):

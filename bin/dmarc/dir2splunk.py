@@ -152,6 +152,7 @@ class Dir2Splunk:
             ("auth_results/dkim/human_result"    , "auth_result_dkim_human_result"),
             ("auth_results/spf/domain"           , "auth_result_spf_domain"),
             ("auth_results/spf/result"           , "auth_result_spf_result"),
+            ("auth_results/spf/scope"            , "auth_result_spf_scope"),
         ])
         meta = ''
         for key in mapping_meta.keys():
@@ -254,12 +255,15 @@ class Dir2Splunk:
                 self.helper.log_debug("process_zipfile: contains %s of size %d (zip file %s)"
                                       % (member.filename, member.file_size, file))
                 # To protect against ZIP bombs we only include XML members smaller than 100MB:
-                if member.file_size < self.max_size and os.path.splitext(member.filename)[1] == ".xml":
+                if member.file_size < self.max_size and member.filename.endswith("xml"):
                     extractedfile = zf.extract(member.filename, self.tmp_dir)
                     members.append(os.path.join(self.tmp_dir, extractedfile))
                     self.helper.log_debug("process_zipfile: extracted %s as %s" % (member.filename, extractedfile))
-                else:
+                elif member.file_size >= self.max_size and member.filename.endswith("xml"):
                     self.helper.log_warning("process_zipfile: skipping oversized member %s of size %d from zip file %s"
+                                            % (member.filename, member.file_size, file))
+                else:
+                    self.helper.log_debug("process_zipfile: skipping non-XML ,ember %s of size %d from zip file %s"
                                             % (member.filename, member.file_size, file))
             zf.close()
             self.helper.log_debug("process_zipfile: finished extracting zip file %s to %s" % (file, self.tmp_dir))
@@ -305,14 +309,13 @@ class Dir2Splunk:
         with open(file, 'r') as f:
             self.helper.log_debug("process_xmlfile_to_json_lines: start parsing xml file %s with do_resolve=%s" % (file, self.do_resolve))
             try:
-                # To protect against various XML threats we use the parse function from defusedxml.ElementTree
-                defuse_parse(f)
+                # To protect against various XML threats we first use the parse function from defusedxml.ElementTree
+                xmldata = defuse_parse(f)
             except Exception as e:
                 self.helper.log_warning("process_xmlfile_to_json_lines: XML parse error in file %s with exception %s"
                                         % (file, e))
             else:
                 f.close()
-                xmldata = parse(file)
                 if self.do_validate_xml:
                     res = self.validate_xml(file)
                     lines = self.rua2json(xmldata, res)
@@ -354,6 +357,8 @@ class Dir2Splunk:
             lines = self.process_xmlfile_to_lines(file)
         elif self.output_format == "json":
             lines = self.process_xmlfile_to_json_lines(file)
+        else:
+            self.helper.log_warning("process_xmlfile: invalid output_format %s", self.output_format)
         return lines
 
 
@@ -371,7 +376,7 @@ class Dir2Splunk:
             xmldata = open(file, 'r').read()
             xsddata = open(xsdfile_long, 'r').read()
         except Exception as e:
-            self.helper.log_warning("validate_xml_xsd: xsd validation opening with %s" % str(e))
+            self.helper.log_warning("validate_xml_xsd: error opening with %s" % str(e))
             info["result"] = "fail"
             info["info"] = "%s" % str(e)
             return info
@@ -389,7 +394,7 @@ class Dir2Splunk:
         try:
             xmlschema.assertValid(xml)
         except Exception as e:
-            self.helper.log_warning("validate_xml_xsd: xsd validation failed against %s for file %s with %s" % (xsdfile, file, str(e)))
+            self.helper.log_debug("validate_xml_xsd: xsd validation failed against %s for file %s with %s" % (xsdfile, file, str(e)))
             info["result"] = "fail"
             info["info"] = "%s" % str(e)
             return info
@@ -458,7 +463,7 @@ class Dir2Splunk:
                     xmldata = xmldata.decode(encoding).encode('utf-8')
                     xmldata = xmldata.replace(" encoding=\"" + encoding + "\"" ,"")
                 except Exception as e:
-                    self.helper.log_warn("fix_xml_encoding: file %s charset cannot be converted with exception %s" % (file, str(e)))
+                    self.helper.log_warning("fix_xml_encoding: file %s charset cannot be converted with exception %s" % (file, str(e)))
                     return file
                 newfile = os.path.join(self.tmp_dir, "transcoded_" + os.path.basename(file))
                 with open(newfile, "w") as nf:

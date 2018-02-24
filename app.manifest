@@ -5,7 +5,7 @@
     "id": {
       "group": null,
       "name": "TA-dmarc",
-      "version": "2.6.1"
+      "version": "3.0.0"
     },
     "author": [
       {
@@ -15,7 +15,7 @@
       }
     ],
     "releaseDate": null,
-    "description": "Add-on for ingesting DMARC XML aggregate reports into Splunk from an IMAP account or local directory.",
+    "description": "Add-on for ingesting DMARC XML aggregate reports into Splunk from an IMAP/POP3 mailbox or local directory.",
     "classification": {
       "intendedAudience": null,
       "categories": [],

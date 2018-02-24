@@ -34,20 +34,17 @@ fields = [
         )
     ), 
     field.RestField(
-        'dmarc_directory',
+        'global_account',
         required=True,
         encrypted=False,
         default=None,
-        validator=validator.String(
-            min_len=0, 
-            max_len=8192, 
-        )
+        validator=None
     ), 
     field.RestField(
-        'quiet_time',
-        required=True,
+        'pop3_server',
+        required=False,
         encrypted=False,
-        default='10',
+        default=None,
         validator=validator.String(
             min_len=0, 
             max_len=8192, 
@@ -68,8 +65,15 @@ fields = [
         validator=None
     ), 
     field.RestField(
+        'validate_dkim',
+        required=False,
+        encrypted=False,
+        default=None,
+        validator=None
+    ), 
+    field.RestField(
         'output_format',
-        required=True,
+        required=False,
         encrypted=False,
         default='json',
         validator=None
@@ -87,7 +91,7 @@ model = RestModel(fields, name=None)
 
 
 endpoint = DataInputModel(
-    'dmarc_directory',
+    'dmarc_pop3',
     model,
 )
 

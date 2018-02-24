@@ -1,9 +1,9 @@
 import os
 import ssl
 import email
-from imapclient import IMAPClient
 import dkim
 import dns
+import poplib
 
 
 # Copyright 2017-2018 Jorrit Folmer
@@ -27,65 +27,70 @@ import dns
 # SOFTWARE.
 
 
-class Imap2Dir:
+class Pop2Dir:
     """ This class:
         - gets DMARC XML aggregate report attachments from a mailbox
         - and saves them to a provided tmp directory
     """
 
 
-    def __init__(self, helper, opt_imap_server, tmp_dir, opt_use_ssl, opt_global_account, opt_imap_mailbox, opt_validate_dkim):
+    def __init__(self, helper, opt_pop3_server, tmp_dir, opt_use_ssl, opt_global_account, opt_validate_dkim):
         # Instance variables:
         self.helper             = helper
-        self.opt_imap_server    = opt_imap_server
-        self.opt_imap_mailbox   = 'INBOX' if opt_imap_mailbox == None else opt_imap_mailbox
-        self.opt_validate_dkim  = opt_validate_dkim
+        self.opt_pop3_server    = opt_pop3_server
         self.opt_use_ssl        = opt_use_ssl
         self.opt_global_account = opt_global_account
+        self.opt_validate_dkim  = opt_validate_dkim
         self.tmp_dir            = tmp_dir
         self.server             = None
 
 
-    def get_imap_connectivity(self):
-        """ Connect to imap server and close the connection """
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-        context.verify_mode = ssl.CERT_NONE
+    def get_pop3_connectivity(self):
+        """ Connect to pop3 server and close the connection """
         try:
             if self.opt_use_ssl:
-                self.server=IMAPClient(self.opt_imap_server, use_uid=True, ssl=True, ssl_context=context)
+                self.server=poplib.POP3_SSL(self.opt_pop3_server)
             else:
-                self.server=IMAPClient(self.opt_imap_server, use_uid=True, ssl=False)
+                self.server=poplib.POP3(self.opt_pop3_server)
         except Exception, e:
-            raise Exception("Error connecting to %s with exception %s" % (self.opt_imap_server, str(e)))
+            raise Exception("Error connecting to %s with exception %s" % (self.opt_pop3_server, str(e)))
         else:
-            self.helper.log_debug('get_imap_connectivity: successfully connected to %s' % self.opt_imap_server)
+            self.helper.log_debug('get_pop3_connectivity: successfully connected to %s' % self.opt_pop3_server)
  
 
     def get_dmarc_messages(self):
-        """ Connect to imap server and return a list of msg uids that match the subject 'Report domain:' """
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-        context.verify_mode = ssl.CERT_NONE
+        """ Connect to pop3 server and return a list of ALL msg uids 
+            Unlike the IMAP equivalent filtering based on Subject is done elsewhere """
         messages = []
         try:
             if self.opt_use_ssl:
-                self.server=IMAPClient(self.opt_imap_server, use_uid=True, ssl=True, ssl_context=context)
+                self.server=poplib.POP3_SSL(self.opt_pop3_server)
+                self.server.user(self.opt_global_account["username"])
+                self.server.pass_(self.opt_global_account["password"])
             else:
-                self.server=IMAPClient(self.opt_imap_server, use_uid=True, ssl=False)
+                self.server=poplib.POP3(self.opt_pop3_server)
+                self.server.user(self.opt_global_account["username"])
+                self.server.pass_(self.opt_global_account["password"])
         except Exception, e:
-            raise Exception("Error connecting to %s with exception %s" % (self.opt_imap_server, str(e)))
+            raise Exception("Error connecting to %s with exception %s" % (self.opt_pop3_server, str(e)))
         else:
-            self.helper.log_debug('get_dmarc_messages: successfully connected to %s' % self.opt_imap_server)
-            self.server.login(self.opt_global_account["username"], self.opt_global_account["password"])
-            info = self.server.select_folder(self.opt_imap_mailbox)
-            self.helper.log_info('get_dmarc_messages: %d messages in folder %s' % (info['EXISTS'], self.opt_imap_mailbox))
-            messages = self.server.search('SUBJECT "Report domain:"')
-            self.helper.log_info('get_dmarc_messages: %d messages in folder %s match subject "Report domain:"' % (len(messages), self.opt_imap_mailbox))
+            self.helper.log_debug('get_dmarc_messages: successfully connected to %s' % self.opt_pop3_server)
+            messages=self.server.uidl()[1]
+            self.helper.log_info('get_dmarc_messages: %d messages' % len(messages))
         return messages
 
 
     def get_dmarc_message_bodies(self, messages):
-        """ Return the full message bodies from the list of message uids """
-        response = self.server.fetch(messages, ['RFC822'])
+        """ Return the full message bodies from the list of message uids 
+            but only if the subject matches Report domain """
+        response = {}
+        for uid in messages:
+            msg = "\n".join(self.server.retr(uid)[1])
+            msgobj = email.message_from_string(msg)
+            if msgobj.get("Subject").find("Report domain:") >= 0:
+                self.helper.log_debug('get_dmarc_message_bodies: found dmarc message: uid %s with subject %s' % (uid, msgobj.get("Subject")))
+                response[uid] = {}
+                response[uid]['RFC822'] = msg
         return response
 
 
@@ -98,13 +103,13 @@ class Imap2Dir:
         except Exception, e:
             raise Exception("Error writing to filename %s with exception %s" % (filename, str(e)))
         else:
-            self.helper.log_debug('write_part_to_file: saved file %s from uid %d' % (filename, uid))
+            self.helper.log_debug('write_part_to_file: saved file %s from uid %s' % (filename, uid))
             return filename
      
 
     def dkim_verify(self, msg, uid):
         """ Verify DKIM signature(s) from a given RFC822 message
-            Returns a result dict """
+            Currently only generated debug logging """
         try:
             obj = dkim.DKIM(msg)
         except Exception, e:
@@ -130,20 +135,20 @@ class Imap2Dir:
                 self.dkim_verify(data['RFC822'], uid)
             msg = email.message_from_string(data['RFC822'])
             if msg.is_multipart():
-                self.helper.log_debug('save_reports_from_message_bodies: start multipart processing of msg uid  %d' % uid)
+                self.helper.log_debug('save_reports_from_message_bodies: start multipart processing of msg uid  %s' % uid)
                 for part in msg.get_payload():
                     ctype = part.get_content_type()
                     if self.check_eligible_mimetype(ctype, uid):
                         filename = self.write_part_to_file(uid, part)
                         filelist.append(filename)
             else:
-                self.helper.log_debug('save_reports_from_message_bodies: start non-multipart processing of msg uid  %d' % uid)
+                self.helper.log_debug('save_reports_from_message_bodies: start non-multipart processing of msg uid  %s' % uid)
                 ctype = msg.get_content_type()
                 if self.check_eligible_mimetype(ctype, uid):
                     filename = self.write_part_to_file(uid, msg)
                     filelist.append(filename)
                 else:
-                    self.helper.log_debug('save_reports_from_message_bodies: skipping content-type %s of msg uid %d' % (ctype, uid))
+                    self.helper.log_debug('save_reports_from_message_bodies: skipping content-type %s of msg uid %s' % (ctype, uid))
             # mark msg as seen in KVstore
             self.save_check_point(uid, msg)
         return filelist
@@ -153,7 +158,7 @@ class Imap2Dir:
         """ Check if a given mimetype is eligible for further processing
             Returns true of false
         """
-        self.helper.log_debug('check_eligible_mimtype: checking content-type %s of msg uid %d' % (ctype, uid))
+        self.helper.log_debug('check_eligible_mimtype: checking content-type %s of msg uid %s' % (ctype, uid))
         if ctype == "application/zip":
             return True
         elif ctype == "application/gzip":
@@ -171,15 +176,15 @@ class Imap2Dir:
         elif ctype == "text/xml":
             return True
         else:
-            self.helper.log_debug('check_eligible_mimtype: skipping content-type %s of msg uid %d' % (ctype, uid))
+            self.helper.log_debug('check_eligible_mimtype: skipping content-type %s of msg uid %s' % (ctype, uid))
             return False
 
 
     def save_check_point(self, uid, msg):
         """ Save checkpointing info for a given uid and msg struct """
-        key = "%s_%s_%d" % (self.opt_imap_server, self.opt_global_account["username"], uid)
+        key = "%s_%s_%s" % (self.opt_pop3_server, self.opt_global_account["username"], uid)
         date = email.utils.mktime_tz(email.utils.parsedate_tz(msg.get('Date')))
-        value = "input=dmarc_imap, server=%s, username=%s, uid=%d, timestamp_utc=%d, subject='%s'" % (self.opt_imap_server, self.opt_global_account["username"], uid, date, msg.get('Subject'))
+        value = "input=dmarc_pop, server=%s, username=%s, uid=%s, timestamp_utc=%d, subject='%s'" % (self.opt_pop3_server, self.opt_global_account["username"], uid, date, msg.get('Subject'))
         try:
             self.helper.save_check_point(key, value)
         except Exception, e:
@@ -189,16 +194,16 @@ class Imap2Dir:
     def filter_seen_messages(self, messages):
         """ From a given list of uids, return only the ones we haven't seen before 
             based on the presence of a KVstore key.
-            This key takes into account: imap server, imap account and imap msg uid
+            This key takes into account: pop server, pop account and pop msg uid
         """
         seen_uids = set()
         for uid in messages:
-            key = "%s_%s_%d" % (self.opt_imap_server, self.opt_global_account["username"], uid)
+            key = "%s_%s_%s" % (self.opt_pop3_server, self.opt_global_account["username"], uid)
             if self.helper.get_check_point(key) != None:
                 seen_uids.add(uid)
         new_uids = set(messages) - seen_uids
-        self.helper.log_debug('filter_seen_messages: uids on imap   %s' % set(messages))
-        self.helper.log_debug('filter_seen_messages: uids on imap   %s' % set(messages))
+        self.helper.log_debug('filter_seen_messages: uids on pop3   %s' % set(messages))
+        self.helper.log_debug('filter_seen_messages: uids on pop3   %s' % set(messages))
         self.helper.log_debug('filter_seen_messages: uids in checkp %s' % seen_uids)
         self.helper.log_debug('filter_seen_messages: uids new       %s' % new_uids)
         return new_uids
@@ -206,15 +211,15 @@ class Imap2Dir:
     def process_incoming(self):
         """ Main function """
         filelist=[]
-        self.helper.log_info("Start processing imap server %s with use_ssl %s" % (self.opt_imap_server, self.opt_use_ssl))
+        self.helper.log_info("Start processing pop3 server %s with use_ssl %s" % (self.opt_pop3_server, self.opt_use_ssl))
         messages = self.get_dmarc_messages()
         new_messages = self.filter_seen_messages(messages)
         if len(new_messages) > 0:
-            self.helper.log_info('Start processing %d new messages of %d on %s' % ( len(new_messages), len(messages), self.opt_imap_server))
+            self.helper.log_info('Start processing %d new messages of %d on %s' % ( len(new_messages), len(messages), self.opt_pop3_server))
             response = self.get_dmarc_message_bodies(new_messages)
             filelist = self.save_reports_from_message_bodies(response)
             self.helper.log_info('Ended processing %d new messages with %d attachments' % ( len(new_messages), len(filelist)))
-        self.helper.log_info("Ended processing imap server %s" % self.opt_imap_server)
+        self.helper.log_info("Ended processing pop3 server %s" % self.opt_pop3_server)
         return filelist
 
 

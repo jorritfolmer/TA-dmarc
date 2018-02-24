@@ -1,30 +1,13 @@
 # TA-dmarc add-on for Splunk
 
-TA-dmarc add-on supports ingesting DMARC XML aggregate reports:
-
-1. from a given directory
-2. from a given IMAP mailbox
-
-and output
-
-1. in JSON format (preferred)
-2. in key=value format (left for legacy purposes)
-
-with mitigations against:
+TA-dmarc add-on for Splunk supports ingesting DMARC XML aggregate reports from
+an IMAP/POP3 mailbox or local directory with mitigations against:
 
 * ZIP bombs
 * gzip bombs
 * various XML attack vectors like billion laughs, quadratic blowup, external entity expansion and so on
-
-## Principles
-
-We use the following guidelines for developing this add-on:
-
-| Principle | Rationale | Implication
-|----------------|-------|---------
-| Data is left intact | This add-on only performs data collection. Other apps may perform data aggregation based on the output of this add-on and require intact data | We don't interpret, alter or omit values. For example we leave the invalid domain AOL uses "not.evaluated" to denote the inability to perform a DKIM check.
-| Structure is left intact | DMARC XML is an hierarchical format | We use JSON output. Key=value output will be deprecated in future versions.
-| Data is enriched where appropriate | New fields can be added to provide better context or offer normalization of the existing data | XSD validation results and DNS resolutions are are added as additional fields. Compliance with CIM authentication datamodel too.
+* malformed reports
+* false reports (alpha)
 
 ## Supported Splunk versions and platforms
 
@@ -40,6 +23,16 @@ Additional requirements:
 
 * Splunk heavy forwarder instance: Because of Python dependencies Splunk Universal Forwarder is not supported
 * KVstore: used to keep track of which IMAP messages or local files have already been processed. KVstore is enabled by default on Splunk instances.
+
+## Principles
+
+We use the following guidelines for developing this add-on:
+
+| Principle | Rationale | Implication
+|----------------|-------|---------
+| Data is left intact | This add-on only performs data collection. Other apps may perform data aggregation and visualisation based on the output of this add-on and require intact data | We don't interpret, alter or omit values. For example we leave the invalid domain AOL uses "not.evaluated" to denote the inability to perform a DKIM check.
+| Structure is left intact | DMARC XML is an hierarchical format | We use JSON output. Key=value output will be deprecated in future versions.
+| Data is enriched where appropriate | New fields can be added to provide better context or offer normalization of the existing data | XSD validation results and DNS resolutions are are added as additional fields. Compliance with CIM authentication datamodel too.
 
 ## Install the TA-dmarc add-on for Splunk
 
@@ -81,7 +74,7 @@ TA-dmarc doesn't modify, move or delete files in the directory: it uses internal
 
 1. Go to the add-on's configuration UI and configure a new modular input by clicking on the "Inputs" menu.
 2. Click "Create new input"
-2. Select "DMARC directory (JSON output)"
+2. Select "DMARC directory"
 3. Configure:
    * Name: e.g. "production_dmarc_indir"
    * Interval: how often to poll the directory where DMARC XML aggregate reports are read from
@@ -92,9 +85,9 @@ TA-dmarc doesn't modify, move or delete files in the directory: it uses internal
    * Validate XML: Whether or not to validate the DMARC XML against the DMARC XSD
 4. Click add
 
-### IMAP input
+### Mailbox input
 
-TA-dmarc can fetch DMARC aggregate reports from an IMAP server.  It will look for:
+TA-dmarc can fetch DMARC aggregate reports from an IMAP or POP3 server.  It will look for:
 
 1. messages with "Report domain:" in the subject.
 2. attachments with .xml, .zip or xml.gz file extentions
@@ -115,7 +108,7 @@ The add-on doesn't modify, move or delete messages on the IMAP server but instea
    * Password: the password to authenticate with
 2. Next, go to the add-on's input tab and configure a new modular input by clicking on the "Inputs" menu.
 2. Click "Create new input"
-3. Select "DMARC mailbox (JSON output)"
+3. Select "DMARC imap" or "DMARC pop3"
 4. Configure:
    * Name: e.g. dmarc-google
    * Interval: how often to poll the mailserver for aggregate reports.
@@ -138,6 +131,10 @@ Second, because the reverse DNS record cannot really be trusted, another forward
 DMARC XML aggregate reports can be validated against multiple DMARC RUA XML schema definition versions (XSD)
 This can be configured in the input with the checkbox "Validate XML"
 The result of the validations is added as new event fields in Splunk: `vendor_rua_xsd_validations`
+
+### Validate DKIM setting
+
+DKIM signatures from email messages can be verified. Currently the results of this validation are only available in debug log. Future versions will add a new event field in Splunk.
 
 ## DMARC aggregate reports
 
@@ -280,11 +277,12 @@ Reindexing a DMARC report from a directory input is left as an excercise for the
 
 ## Contributers
 
-These people haves contributed pull requests, issues, ideas or otherwise spent time improving this add-on:
+These people and organisations have contributed pull requests, issues, ideas or otherwise spent time improving this add-on:
 
 - Steve Myers (stmyers)
 - John (john-9c54a80b)
 - Steven Hilton (malvidin)
+- [SMTware](https://www.smtware.com/en/services)
 
 ## Third party software credits
 
@@ -293,7 +291,9 @@ The following software components are used in this add-on:
 1. [defusedxml](https://pypi.python.org/pypi/defusedxml/0.5.0) version 0.5.0 by Christian Heimes
 2. [xmljson](https://pypi.python.org/pypi/xmljson) version 0.1.9 by S. Anand
 3. [IMAPClient](https://github.com/mjs/imapclient) version 1.0.2 by Menno Finlay-Smits
-4. [Splunk Add-on Builder](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Overview) version 2.2.0 by Splunk and the [third-party software](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Thirdpartysoftwarecredits) it uses
+4. [dkimpy](https://pypi.python.org/pypi/dkimpy) version 0.6.2 by Scott Kitterman
+5. [dnspython](https://pypi.python.org/pypi/dnspython) version 1.15.0 by Bob Halley
+6. [Splunk Add-on Builder](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Overview) version 2.2.0 by Splunk and the [third-party software](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Thirdpartysoftwarecredits) it uses
 
 ## CHANGELOG
 

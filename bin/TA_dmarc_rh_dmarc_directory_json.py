@@ -67,6 +67,13 @@ fields = [
         default=True,
         validator=None
     ), 
+    field.RestField(
+        'output_format',
+        required=True,
+        encrypted=False,
+        default='json',
+        validator=None
+    ), 
 
     field.RestField(
         'disabled',

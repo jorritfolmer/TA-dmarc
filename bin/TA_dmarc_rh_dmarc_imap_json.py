@@ -65,6 +65,13 @@ fields = [
         validator=None
     ), 
     field.RestField(
+        'validate_dkim',
+        required=False,
+        encrypted=False,
+        default=None,
+        validator=None
+    ), 
+    field.RestField(
         'imap_mailbox',
         required=True,
         encrypted=False,
@@ -73,6 +80,13 @@ fields = [
             min_len=0, 
             max_len=8192, 
         )
+    ), 
+    field.RestField(
+        'output_format',
+        required=True,
+        encrypted=False,
+        default='json',
+        validator=None
     ), 
 
     field.RestField(

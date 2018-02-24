@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.0
+
+- Added POP3 support
+- Added initial DKIM signature checking
+- Added support for zip files containing files like "aol com 12345 12355 xml"
+- Moved JSON and KV output into a pulldown instead of seperate inputs
+
 ## 2.6.1
 
 - Improved exception handling of character sets handling

@@ -28,7 +28,7 @@ class TestDMARCprocessing(unittest.TestCase):
         d2s = Dir2Splunk(None, helper, None, None, None, None, None)
         # read in expected JSON output and compare
         json_export = "".join(d2s.process_xmlfile_to_json_lines("./data/rua.xml"))
-        fjson = open("./data/rua.json", "r")
+        fjson = open("./data/rua.json.dat", "r")
         expected_result = fjson.read()
         eq(json_export, expected_result)
         fjson.close()
@@ -42,7 +42,7 @@ class TestDMARCprocessing(unittest.TestCase):
         d2s = Dir2Splunk(None, helper, None, None, None, None, None)
         # read in expected JSON output and compare
         json_export = "".join(d2s.process_xmlfile_to_json_lines("./data/rua_multiple_records.xml"))
-        fjson = open("./data/rua_multiple_records.json", "r")
+        fjson = open("./data/rua_multiple_records.json.dat", "r")
         expected_result = fjson.read()
         eq(json_export, expected_result)
         fjson.close()
@@ -56,7 +56,7 @@ class TestDMARCprocessing(unittest.TestCase):
         d2s = Dir2Splunk(None, helper, None, None, None, True, None)
         # read in expected JSON output and compare
         json_export = "".join(d2s.process_xmlfile_to_json_lines("./data/rua_multiple_records.xml"))
-        fjson = open("./data/rua_multiple_records.validated.json", "r")
+        fjson = open("./data/rua_multiple_records.validated.json.dat", "r")
         expected_result = fjson.read()
         eq(json_export, expected_result)
         fjson.close()
@@ -98,7 +98,7 @@ class TestDMARCprocessing(unittest.TestCase):
         d2s = Dir2Splunk(None, helper, None, None, None, None, None)
         # read in expected JSON output and compare
         json_export = "".join(d2s.process_xmlfile_to_json_lines("./data/dkim2auth.xml"))
-        fjson = open("./data/dkim2auth.json", "r")
+        fjson = open("./data/dkim2auth.json.dat", "r")
         expected_result = fjson.read()
         eq(json_export, expected_result)
         fjson.close()
