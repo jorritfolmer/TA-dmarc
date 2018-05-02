@@ -118,12 +118,16 @@ class Pop2Dir:
             sigheaders = [(x,y) for x,y in obj.headers if x.lower() == b"dkim-signature"]
             self.helper.log_debug('dkim_verify: msg uid %s has %d DKIM signatures' % (uid, len(sigheaders)))
             for i in range(0, len(sigheaders)):
-                res = obj.verify(i)
-                if res:
-                    self.helper.log_debug('dkim_verify: msg uid %s signature %d ok from domain %s selector %s' % (uid, i, obj.domain, obj.selector))
+                try:
+                    res = obj.verify(i)
+                except Exception, e:
+                    self.helper.log_info('dkim_verify: exception verifying msg uid %s with %s' % (uid, str(e)))
                 else:
-                    self.helper.log_debug('dkim_verify: msg uid %s signature %d fail from domain %s selector %s' % (uid, i, obj.domain, obj.selector))
-        
+                    if res:
+                        self.helper.log_debug('dkim_verify: msg uid %s signature %d ok from domain %s selector %s' % (uid, i, obj.domain, obj.selector))
+                    else:
+                        self.helper.log_debug('dkim_verify: msg uid %s signature %d fail from domain %s selector %s' % (uid, i, obj.domain, obj.selector))
+
 
     def save_reports_from_message_bodies(self, response):
         """ Find xml, zip and gzip attachments in the response, and write them to disk 

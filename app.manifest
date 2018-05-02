@@ -15,7 +15,7 @@
       }
     ],
     "releaseDate": null,
-    "description": "Add-on for ingesting DMARC XML aggregate reports into Splunk from an IMAP/POP3 mailbox or local directory.",
+    "description": "TA-dmarc add-on for Splunk",
     "classification": {
       "intendedAudience": null,
       "categories": [],

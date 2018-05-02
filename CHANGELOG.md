@@ -6,6 +6,7 @@
 - Added initial DKIM signature checking
 - Added support for zip files containing files like "aol com 12345 12355 xml"
 - Moved JSON and KV output into a pulldown instead of seperate inputs
+- Fixed timeout exceptions with some DKIM verifications
 
 ## 2.6.1
 

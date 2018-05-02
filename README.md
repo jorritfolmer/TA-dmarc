@@ -18,21 +18,29 @@ an IMAP/POP3 mailbox or local directory with mitigations against:
 | 6.5            | Yes   | Yes
 | 6.6            | Yes   | Yes
 | 7.0            | Yes   | Yes
+| 7.1            | Yes   | Yes
 
 Additional requirements:
 
 * Splunk heavy forwarder instance: Because of Python dependencies Splunk Universal Forwarder is not supported
 * KVstore: used to keep track of which IMAP messages or local files have already been processed. KVstore is enabled by default on Splunk instances.
 
-## Principles
+## Upgrading from previous versions
 
-We use the following guidelines for developing this add-on:
+### From 2.x to 3.x
 
-| Principle | Rationale | Implication
-|----------------|-------|---------
-| Data is left intact | This add-on only performs data collection. Other apps may perform data aggregation and visualisation based on the output of this add-on and require intact data | We don't interpret, alter or omit values. For example we leave the invalid domain AOL uses "not.evaluated" to denote the inability to perform a DKIM check.
-| Structure is left intact | DMARC XML is an hierarchical format | We use JSON output. Key=value output will be deprecated in future versions.
-| Data is enriched where appropriate | New fields can be added to provide better context or offer normalization of the existing data | XSD validation results and DNS resolutions are are added as additional fields. Compliance with CIM authentication datamodel too.
+The event output format changed to JSON. This is the new default because JSON is a better match for the structured aggregate reports than a flat key=value (KV) format. See for example issue #4 on Github. If you want your inputs to to keep using the KV format:
+
+- Disable your inputs before upgrading
+- Upgrade the add-on to version 3.x
+- Edit your inputs and change the output format to KV
+- Enable your inputs
+
+Note that KV format output is likely to be deprecated in future versions, and enhancements like multiple XSD validation aren't available in KV output format.
+
+### From 1.x to 2.x
+
+Because of changes to KVstore logic, the add-on will re-index every report on IMAP, leading to duplicate events.
 
 ## Install the TA-dmarc add-on for Splunk
 
@@ -60,7 +68,88 @@ The following table lists support for distributed deployment roles in a Splunk d
 
 ## Configure TA-dmarc add-on for Splunk
 
+Steps:
+
+1. Add an account
+2. Add an input
+
+If you're using this add-on from a disconnected network, you can skip account creation and create a new directory based input.
+This assumes you have an offline method for getting DMARC attachments to this directory.
+
+### Add an account
+
+In the Configuration tab, create a new account:
+
+* Account Name: descriptive account name, e.g. google_dmarc_mailbox
+* Username: the account to identify with
+* Password: the password to authenticate with
+
+![Create global account](appserver/static/screenshot_create_global_account.png)
+
+### Add an input
+
+This add-on can ingest DMARC aggregate reports from:
+
+* IMAP mailboxes
+* POP mailboxes
+* Local directories (for offline environments)
+
 ![Screenshot create new input](appserver/static/screenshot.png)
+
+### DMARC imap/pop input
+
+Go to the add-on's input tab and configure a new modular input by clicking on the "Inputs" menu:
+
+![Screenshot create new input](appserver/static/screenshot_imap.png)
+
+* Click "Create new input"
+* Select "DMARC imap" or "DMARC pop3"
+* Configure:
+   * Name: e.g. dmarc-google
+   * Interval: how often to poll the mailserver for aggregate reports.
+   * Index: what Splunk index to send the aggregate reports to
+   * Global Account: select the account to authenticate with
+   * IMAP server: the imap server to poll
+   * Resolve IP: Whether or not to resolve the row source_ip in the DMARC XML aggregate reports
+   * Validate XML: Whether or not to validate the DMARC XML against the DMARC XSD
+   * Validate DKIM: Whether or not to validate the DKIM signature(s) in the mail
+   * IMAP mailbox: Select the specific IMAP mailbox folder to poll. Default: INBOX
+   * Output format: Send events to Splunk in JSON format (default) or key=value (left for compatibility reasons)
+
+
+TA-dmarc can fetch DMARC aggregate reports from an IMAP or POP3 server.  It will look for:
+
+1. messages with "Report domain:" in the subject.
+2. attachments with .xml, .zip or xml.gz file extentions
+3. attachments with mime-types:
+    - application/zip
+    - application/gzip
+    - application/x-gzip
+    - application/xml
+    - text/xml
+    - application-x-gzip (Non-standard mimetype used for Comcast DMARC reports)
+    - application/x-zip-compressed (Non-standard mimetype used for Yahoo DMARC reports)
+
+The add-on doesn't modify, move or delete messages on the IMAP server but insteads keeps a record in the Splunk KV-store of which mails have already been read.
+
+#### Resolve IP setting
+
+DMARC XML aggregate reports contain a `source_ip` that can be reverse resolved at index time. This is the default but can cause considerable delay in processing aggregate reports due to unreachable nameservers.
+Second, because the reverse DNS record cannot really be trusted, another forward lookup is performed. Only if the reverse and forward lookup match, the result is included in the output.
+
+#### Validate XML setting
+
+DMARC XML aggregate reports can be validated against multiple DMARC RUA XML schema definition versions (XSD):
+
+- The XSD from draft-dmarc-base-00-02 (march 2012)
+- The XSD from RFC7489 (march 2015)
+- A custom relaxed XSD that should succesfully verify RFC7489-based reporters and pre-RFC7489 reporters
+
+The result of the validations is added as new event fields in Splunk: `vendor_rua_xsd_validations`
+
+#### Validate DKIM setting
+
+DKIM signatures from email messages can be verified. Currently the results of this validation are only available in debug log. Future versions will add a new event field in Splunk.
 
 ### Directory input
 
@@ -85,56 +174,6 @@ TA-dmarc doesn't modify, move or delete files in the directory: it uses internal
    * Validate XML: Whether or not to validate the DMARC XML against the DMARC XSD
 4. Click add
 
-### Mailbox input
-
-TA-dmarc can fetch DMARC aggregate reports from an IMAP or POP3 server.  It will look for:
-
-1. messages with "Report domain:" in the subject.
-2. attachments with .xml, .zip or xml.gz file extentions
-3. attachments with mime-types:
-    - application/zip
-    - application/gzip
-    - application/x-gzip
-    - application/xml
-    - text/xml
-    - application-x-gzip (Non-standard mimetype used for Comcast DMARC reports)
-    - application/x-zip-compressed (Non-standard mimetype used for Yahoo DMARC reports)
-
-The add-on doesn't modify, move or delete messages on the IMAP server but insteads keeps a record in the Splunk KV-store of which mails have already been read.
-
-1. First, go to the add-on's configuration tab and configure an account to authenticate with:
-   * Account Name: descriptive account name, e.g. google_dmarc_mailbox
-   * Username: the account to identify with
-   * Password: the password to authenticate with
-2. Next, go to the add-on's input tab and configure a new modular input by clicking on the "Inputs" menu.
-2. Click "Create new input"
-3. Select "DMARC imap" or "DMARC pop3"
-4. Configure:
-   * Name: e.g. dmarc-google
-   * Interval: how often to poll the mailserver for aggregate reports.
-   * Index: what Splunk index to send the aggregate reports to
-   * Global Account: select the account to authenticate with
-   * IMAP server: the imap server to poll
-   * Resolve IP: Whether or not to resolve the row source_ip in the DMARC XML aggregate reports
-   * Validate XML: Whether or not to validate the DMARC XML against the DMARC XSD
-   * IMAP mailbox: Select the specific IMAP mailbox folder to poll. Default: INBOX
-
-![Create global account](appserver/static/screenshot_create_global_account.png)
-
-### Resolve IP setting
-
-DMARC XML aggregate reports contain a `source_ip` that can be reverse resolved at index time. This is the default but can cause considerable delay in processing aggregate reports due to unreachable nameservers.
-Second, because the reverse DNS record cannot really be trusted, another forward lookup is performed. Only if the reverse and forward lookup match, the result is included in the output.
-
-### Validate XML setting
-
-DMARC XML aggregate reports can be validated against multiple DMARC RUA XML schema definition versions (XSD)
-This can be configured in the input with the checkbox "Validate XML"
-The result of the validations is added as new event fields in Splunk: `vendor_rua_xsd_validations`
-
-### Validate DKIM setting
-
-DKIM signatures from email messages can be verified. Currently the results of this validation are only available in debug log. Future versions will add a new event field in Splunk.
 
 ## DMARC aggregate reports
 
@@ -250,6 +289,7 @@ From the DMARC XML sample above, the following fields are created:
 |vendor_rua_xsd_validations. rua_rfc7489.xsd.info                   | Element 'report_metadata': This element is not expected. Expected is ( version )., line 3	 | Add-on enrichment
 |vendor_rua_xsd_validations. rua_ta_dmarc_relaxed_v01.xsd.result    | pass   | Add-on enrichment
 
+
 ## Advanced
 
 ### Checkpointing
@@ -275,9 +315,19 @@ If you want to reindex a single DMARC report, you can do so by deleting its corr
 
 Reindexing a DMARC report from a directory input is left as an excercise for the reader.
 
+## Principles
+
+We use the following guidelines for developing this add-on:
+
+| Principle | Rationale | Implication
+|----------------|-------|---------
+| Data is left intact | This add-on only performs data collection. Other apps may perform data aggregation and visualisation based on the output of this add-on and require intact data | We don't interpret, alter or omit values. For example we leave the invalid domain AOL uses "not.evaluated" to denote the inability to perform a DKIM check.
+| Structure is left intact | DMARC XML is an hierarchical format | We use JSON output. Key=value output will be deprecated in future versions.
+| Data is enriched where appropriate | New fields can be added to provide better context or offer normalization of the existing data | XSD validation results and DNS resolutions are are added as additional fields. Compliance with CIM authentication datamodel too.
+
 ## Contributers
 
-These people and organisations have contributed pull requests, issues, ideas or otherwise spent time improving this add-on:
+This add-on is maintained by Jorrit Folmer. These people and organisations have contributed pull requests, issues, ideas or otherwise spent time improving this add-on:
 
 - Steve Myers (stmyers)
 - John (john-9c54a80b)
