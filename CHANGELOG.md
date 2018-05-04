@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.1
+
+- Fixed connection reset errors for large IMAP mailboxes
+  (Thanks to Mike Kolk for the patch)
+
 ## 3.0.0
 
 - Added POP3 support

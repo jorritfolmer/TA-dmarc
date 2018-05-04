@@ -85,7 +85,12 @@ class Imap2Dir:
 
     def get_dmarc_message_bodies(self, messages):
         """ Return the full message bodies from the list of message uids """
-        response = self.server.fetch(messages, ['RFC822'])
+        fetch_size=100
+        response = dict()
+        messageslist = list(messages)
+        for x in range(0,len(messageslist),fetch_size):
+            self.helper.log_debug('get_dmarc_message_bodies: getting messages %s to %s' % (str(x),str(min(x+fetch_size,len(messageslist)))))
+            response.update(self.server.fetch(set(messageslist[x:x+fetch_size]), ['RFC822']))
         return response
 
 
