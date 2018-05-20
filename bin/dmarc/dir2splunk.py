@@ -158,7 +158,7 @@ class Dir2Splunk:
         for key in mapping_meta.keys():
             field = xmldata.findtext(key, default=None)
             if field is not None:
-                meta += "%s=\"%s\",\n" % (mapping_meta[key], field)
+                meta += "%s=\"%s\",\n" % (mapping_meta[key], field.lower()) if key.startswith('policy') else "%s=\"%s\",\n" % (mapping_meta[key], field)
         records = xmldata.findall("record")
         self.helper.log_debug("rua2kv: report_id %s has %d records"
                               % (xmldata.findtext("report_metadata/report_id", default=""), len(records)))
@@ -168,7 +168,7 @@ class Dir2Splunk:
             for key in mapping_record.keys():
                 field = record.findtext(key, default=None)
                 if field is not None:
-                    data += "%s=\"%s\",\n" % (mapping_record[key], field)
+                    data += "%s=\"%s\",\n" % (mapping_record[key], field.lower())
                 if key == "row/source_ip" and self.do_resolve:
                     try:
                         self.helper.log_debug("rua2kv: resolving %s" % field)
@@ -186,6 +186,25 @@ class Dir2Splunk:
         self.helper.log_debug("rua2kv: report_id %s finished parsing"
                               % xmldata.findtext("report_metadata/report_id", default=""))
         return result
+
+
+    def dict2lower(self,obj):
+        """ Make dictionary lowercase
+            Copyright 2016 by vldbnc, MIT license
+            https://stackoverflow.com/questions/764235/dictionary-to-lowercase-in-python """
+        if isinstance(obj, dict):
+            t = type(obj)()
+            for k, v in obj.items():
+                t[k.lower()] = self.dict2lower(v)
+            return t
+        elif isinstance(obj, (list, set, tuple)):
+            t = type(obj)
+            return t(self.dict2lower(o) for o in obj)
+        elif isinstance(obj, basestring):
+            return obj.lower()
+        else:
+            return obj 
+    
 
     def rua2json(self, xmldata, validation_result=[]):
         """ Returns a string in JSON format based on RUA XML input and its validation results
@@ -206,10 +225,16 @@ class Dir2Splunk:
         meta_elements = ["report_metadata", "policy_published", "version"]
         for meta_element in meta_elements:
             try:
-                element = xmldata.find(meta_element)
-                feedback_list.append(yahoo.data(element))
+                element = yahoo.data(xmldata.find(meta_element))
             except Exception:
                 self.helper.log_debug("rua2json: report did not contain metadata element, %s" % meta_element)
+            else:
+                if meta_element == 'policy_published':
+                    # convert keys and values to lowercasr
+                    element = self.dict2lower(element)
+                    feedback_list.append(element)
+                else:
+                    feedback_list.append(element)
         records = xmldata.findall("record")
         self.helper.log_debug("rua2json: report_id %s has %d records"
                               % (xmldata.findtext("report_metadata/report_id", default=""), len(records)))
@@ -228,7 +253,9 @@ class Dir2Splunk:
                         ip_resolution.text = resolve[0]
                 except Exception:
                     self.helper.log_debug("rua2json: failed to resolve %s" % data_ip)
-            feedback_list.append(yahoo.data(record))
+            record = yahoo.data(record)
+            record = self.dict2lower(record)
+            feedback_list.append(record)
             # Aggregate report metadata, policy, record and xsd_validation
             result_dict.update(feedback_dict)
             result_dict.update(validation_dict)

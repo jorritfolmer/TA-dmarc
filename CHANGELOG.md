@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.2
+
+- Lowercase keys and values in policy_published and records
+  (Thanks to Christopher G Andrews for reporting this issue)
+
 ## 3.0.1
 
 - Fixed connection reset errors for large IMAP mailboxes

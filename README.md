@@ -329,6 +329,7 @@ We use the following guidelines for developing this add-on:
 
 This add-on is maintained by Jorrit Folmer. These people and organisations have contributed pull requests, issues, ideas or otherwise spent time improving this add-on:
 
+- Christopher G Andrews (ChristopherGAndrews)
 - John (john-9c54a80b)
 - Mike Kolk
 - Steve Myers (stmyers)
