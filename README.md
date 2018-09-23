@@ -332,6 +332,7 @@ This add-on is maintained by Jorrit Folmer. These people and organisations have 
 - Christopher G Andrews (ChristopherGAndrews)
 - John (john-9c54a80b)
 - Mike Kolk
+- Samuel Haper (sharperer)
 - Steve Myers (stmyers)
 - Steven Hilton (malvidin)
 - [SMTware](https://www.smtware.com/en/services)

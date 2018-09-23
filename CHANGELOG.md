@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.1.0
+
+- Added field to make batch size configurable for IMAP inputs
+
 ## 3.0.2
 
 - Lowercase keys and values in policy_published and records
