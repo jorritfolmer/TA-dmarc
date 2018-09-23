@@ -90,7 +90,7 @@ class Imap2Dir:
         response = dict()
         messageslist = list(messages)
         for x in range(0,len(messageslist),fetch_size):
-            self.helper.log_debug('get_dmarc_message_bodies: getting messages %s to %s' % (str(x),str(min(x+fetch_size,len(messageslist)))))
+            self.helper.log_info('get_dmarc_message_bodies: getting messages %s to %s' % (str(x),str(min(x+fetch_size,len(messageslist)))))
             response.update(self.server.fetch(set(messageslist[x:x+fetch_size]), ['RFC822']))
         return response
 
