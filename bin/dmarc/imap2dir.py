@@ -34,7 +34,7 @@ class Imap2Dir:
     """
 
 
-    def __init__(self, helper, opt_imap_server, tmp_dir, opt_use_ssl, opt_global_account, opt_imap_mailbox, opt_validate_dkim):
+    def __init__(self, helper, opt_imap_server, tmp_dir, opt_use_ssl, opt_global_account, opt_imap_mailbox, opt_validate_dkim, opt_batch_size):
         # Instance variables:
         self.helper             = helper
         self.opt_imap_server    = opt_imap_server
@@ -42,6 +42,7 @@ class Imap2Dir:
         self.opt_validate_dkim  = opt_validate_dkim
         self.opt_use_ssl        = opt_use_ssl
         self.opt_global_account = opt_global_account
+        self.opt_batch_size     = 100 if opt_batch_size == None else opt_batch_size
         self.tmp_dir            = tmp_dir
         self.server             = None
 
@@ -85,11 +86,11 @@ class Imap2Dir:
 
     def get_dmarc_message_bodies(self, messages):
         """ Return the full message bodies from the list of message uids """
-        fetch_size=100
+        fetch_size=self.opt_batch_size
         response = dict()
         messageslist = list(messages)
         for x in range(0,len(messageslist),fetch_size):
-            self.helper.log_debug('get_dmarc_message_bodies: getting messages %s to %s' % (str(x),str(min(x+fetch_size,len(messageslist)))))
+            self.helper.log_info('get_dmarc_message_bodies: getting messages %s to %s' % (str(x),str(min(x+fetch_size,len(messageslist)))))
             response.update(self.server.fetch(set(messageslist[x:x+fetch_size]), ['RFC822']))
         return response
 

@@ -19,10 +19,11 @@ def validate_input(helper, definition):
     opt_use_ssl        = True
     opt_global_account = definition.parameters.get('global_account', None)
     opt_validate_dkim  = definition.parameters.get('validate_dkim', None)
+    opt_batch_size     = int(definition.parameters.get('batch_size', None))
 
     try:
         tmp_dir = create_tmp_dir(helper)
-        i2d = Imap2Dir(helper, opt_imap_server, tmp_dir, opt_use_ssl, opt_global_account, opt_imap_mailbox, opt_validate_dkim)
+        i2d = Imap2Dir(helper, opt_imap_server, tmp_dir, opt_use_ssl, opt_global_account, opt_imap_mailbox, opt_validate_dkim, opt_batch_size)
         i2d.get_imap_connectivity()
     finally:
         remove_tmp_dir(helper, tmp_dir)
@@ -38,12 +39,13 @@ def collect_events(helper, ew):
     opt_validate_xml   = helper.get_arg('validate_xml')
     opt_validate_dkim  = helper.get_arg('validate_dkim')
     opt_output_format  = helper.get_arg('output_format')
+    opt_batch_size     = int(helper.get_arg('batch_size'))
 
     loglevel   = helper.get_log_level()
     helper.set_log_level(loglevel)
 
     tmp_dir = create_tmp_dir(helper)
-    i2d = Imap2Dir(helper, opt_imap_server, tmp_dir, opt_use_ssl, opt_global_account, opt_imap_mailbox, opt_validate_dkim)
+    i2d = Imap2Dir(helper, opt_imap_server, tmp_dir, opt_use_ssl, opt_global_account, opt_imap_mailbox, opt_validate_dkim, opt_batch_size)
     try:
         filelist = i2d.process_incoming()
         if len(filelist)>0:

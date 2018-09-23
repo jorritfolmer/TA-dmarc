@@ -88,6 +88,16 @@ fields = [
         default='json',
         validator=None
     ), 
+    field.RestField(
+        'batch_size',
+        required=False,
+        encrypted=False,
+        default='100',
+        validator=validator.String(
+            min_len=0, 
+            max_len=8192, 
+        )
+    ), 
 
     field.RestField(
         'disabled',
