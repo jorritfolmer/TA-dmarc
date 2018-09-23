@@ -23,7 +23,7 @@ def validate_input(helper, definition):
 
     try:
         tmp_dir = create_tmp_dir(helper)
-        i2d = Imap2Dir(helper, opt_imap_server, tmp_dir, opt_use_ssl, opt_global_account, opt_imap_mailbox, opt_validate_dkim)
+        i2d = Imap2Dir(helper, opt_imap_server, tmp_dir, opt_use_ssl, opt_global_account, opt_imap_mailbox, opt_validate_dkim, opt_batch_size)
         i2d.get_imap_connectivity()
     finally:
         remove_tmp_dir(helper, tmp_dir)

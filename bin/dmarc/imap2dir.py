@@ -86,7 +86,7 @@ class Imap2Dir:
 
     def get_dmarc_message_bodies(self, messages):
         """ Return the full message bodies from the list of message uids """
-        fetch_size=opt_batch_size
+        fetch_size=self.opt_batch_size
         response = dict()
         messageslist = list(messages)
         for x in range(0,len(messageslist),fetch_size):
