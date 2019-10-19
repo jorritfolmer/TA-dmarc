@@ -1,3 +1,6 @@
+from builtins import str
+from builtins import range
+from builtins import object
 import os
 import ssl
 import email
@@ -27,7 +30,7 @@ import dns
 # SOFTWARE.
 
 
-class Imap2Dir:
+class Imap2Dir(object):
     """ This class:
         - gets DMARC XML aggregate report attachments from a mailbox
         - and saves them to a provided tmp directory
@@ -56,7 +59,7 @@ class Imap2Dir:
                 self.server=IMAPClient(self.opt_imap_server, use_uid=True, ssl=True, ssl_context=context)
             else:
                 self.server=IMAPClient(self.opt_imap_server, use_uid=True, ssl=False)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Error connecting to %s with exception %s" % (self.opt_imap_server, str(e)))
         else:
             self.helper.log_debug('get_imap_connectivity: successfully connected to %s' % self.opt_imap_server)
@@ -72,7 +75,7 @@ class Imap2Dir:
                 self.server=IMAPClient(self.opt_imap_server, use_uid=True, ssl=True, ssl_context=context)
             else:
                 self.server=IMAPClient(self.opt_imap_server, use_uid=True, ssl=False)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Error connecting to %s with exception %s" % (self.opt_imap_server, str(e)))
         else:
             self.helper.log_debug('get_dmarc_messages: successfully connected to %s' % self.opt_imap_server)
@@ -101,7 +104,7 @@ class Imap2Dir:
         filename = os.path.join(self.tmp_dir, os.path.basename(filename))
         try:
             open(filename, 'wb').write(part.get_payload(decode=True))
-        except Exception, e:
+        except Exception as e:
             raise Exception("Error writing to filename %s with exception %s" % (filename, str(e)))
         else:
             self.helper.log_debug('write_part_to_file: saved file %s from uid %d' % (filename, uid))
@@ -113,7 +116,7 @@ class Imap2Dir:
             Returns a result dict """
         try:
             obj = dkim.DKIM(msg)
-        except Exception, e:
+        except Exception as e:
             self.helper.log_info('dkim_verify: exception verifying msg uid %s with %s' % (uid, str(e)))
         else:
             sigheaders = [(x,y) for x,y in obj.headers if x.lower() == b"dkim-signature"]
@@ -121,7 +124,7 @@ class Imap2Dir:
             for i in range(0, len(sigheaders)):
                 try:
                     res = obj.verify(i)
-                except Exception, e:
+                except Exception as e:
                     self.helper.log_info('dkim_verify: exception verifying msg uid %s with %s' % (uid, str(e)))
                 else:
                     if res:
@@ -135,7 +138,7 @@ class Imap2Dir:
             Return a list of filenames that were written
         """
         filelist = []
-        for uid, data in response.items():
+        for uid, data in list(response.items()):
             if self.opt_validate_dkim:
                 self.dkim_verify(data['RFC822'], uid)
             msg = email.message_from_string(data['RFC822'])
@@ -192,7 +195,7 @@ class Imap2Dir:
         value = "input=dmarc_imap, server=%s, username=%s, uid=%d, timestamp_utc=%d, subject='%s'" % (self.opt_imap_server, self.opt_global_account["username"], uid, date, msg.get('Subject'))
         try:
             self.helper.save_check_point(key, value)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Error saving checkpoint data with with exception %s" % str(e))
 
 

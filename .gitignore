@@ -36,6 +36,10 @@ coverage.xml
 *.log
 *.pot
 
+# Backup files
+*.bak
+
 # Splunk:
 local/
 local.meta
+

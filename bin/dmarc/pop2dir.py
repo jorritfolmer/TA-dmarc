@@ -1,3 +1,6 @@
+from builtins import str
+from builtins import range
+from builtins import object
 import os
 import ssl
 import email
@@ -27,7 +30,7 @@ import poplib
 # SOFTWARE.
 
 
-class Pop2Dir:
+class Pop2Dir(object):
     """ This class:
         - gets DMARC XML aggregate report attachments from a mailbox
         - and saves them to a provided tmp directory
@@ -52,7 +55,7 @@ class Pop2Dir:
                 self.server=poplib.POP3_SSL(self.opt_pop3_server)
             else:
                 self.server=poplib.POP3(self.opt_pop3_server)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Error connecting to %s with exception %s" % (self.opt_pop3_server, str(e)))
         else:
             self.helper.log_debug('get_pop3_connectivity: successfully connected to %s' % self.opt_pop3_server)
@@ -71,7 +74,7 @@ class Pop2Dir:
                 self.server=poplib.POP3(self.opt_pop3_server)
                 self.server.user(self.opt_global_account["username"])
                 self.server.pass_(self.opt_global_account["password"])
-        except Exception, e:
+        except Exception as e:
             raise Exception("Error connecting to %s with exception %s" % (self.opt_pop3_server, str(e)))
         else:
             self.helper.log_debug('get_dmarc_messages: successfully connected to %s' % self.opt_pop3_server)
@@ -100,7 +103,7 @@ class Pop2Dir:
         filename = os.path.join(self.tmp_dir, os.path.basename(filename))
         try:
             open(filename, 'wb').write(part.get_payload(decode=True))
-        except Exception, e:
+        except Exception as e:
             raise Exception("Error writing to filename %s with exception %s" % (filename, str(e)))
         else:
             self.helper.log_debug('write_part_to_file: saved file %s from uid %s' % (filename, uid))
@@ -112,7 +115,7 @@ class Pop2Dir:
             Currently only generated debug logging """
         try:
             obj = dkim.DKIM(msg)
-        except Exception, e:
+        except Exception as e:
             self.helper.log_info('dkim_verify: exception verifying msg uid %s with %s' % (uid, str(e)))
         else:
             sigheaders = [(x,y) for x,y in obj.headers if x.lower() == b"dkim-signature"]
@@ -120,7 +123,7 @@ class Pop2Dir:
             for i in range(0, len(sigheaders)):
                 try:
                     res = obj.verify(i)
-                except Exception, e:
+                except Exception as e:
                     self.helper.log_info('dkim_verify: exception verifying msg uid %s with %s' % (uid, str(e)))
                 else:
                     if res:
@@ -134,7 +137,7 @@ class Pop2Dir:
             Return a list of filenames that were written
         """
         filelist = []
-        for uid, data in response.items():
+        for uid, data in list(response.items()):
             if self.opt_validate_dkim:
                 self.dkim_verify(data['RFC822'], uid)
             msg = email.message_from_string(data['RFC822'])
@@ -191,7 +194,7 @@ class Pop2Dir:
         value = "input=dmarc_pop, server=%s, username=%s, uid=%s, timestamp_utc=%d, subject='%s'" % (self.opt_pop3_server, self.opt_global_account["username"], uid, date, msg.get('Subject'))
         try:
             self.helper.save_check_point(key, value)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Error saving checkpoint data with with exception %s" % str(e))
 
 

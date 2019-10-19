@@ -1,3 +1,4 @@
+from builtins import map
 import codecs, encodings
 
 # Copyright 2001 Paul Prescod

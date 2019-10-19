@@ -1,3 +1,6 @@
+from builtins import str
+from past.builtins import basestring
+from builtins import object
 import os
 import sys
 import time
@@ -37,7 +40,7 @@ from xmljson import yahoo
 # SOFTWARE.
 
 
-class Dir2Splunk:
+class Dir2Splunk(object):
     """ This class:
         - parses DMARC aggregate report files in .xml, .xml.zip or .xml.gz
         - from a given directory
@@ -155,7 +158,7 @@ class Dir2Splunk:
             ("auth_results/spf/scope"            , "auth_result_spf_scope"),
         ])
         meta = ''
-        for key in mapping_meta.keys():
+        for key in list(mapping_meta.keys()):
             field = xmldata.findtext(key, default=None)
             if field is not None:
                 meta += "%s=\"%s\",\n" % (mapping_meta[key], field.lower()) if key.startswith('policy') else "%s=\"%s\",\n" % (mapping_meta[key], field)
@@ -165,7 +168,7 @@ class Dir2Splunk:
         result = []
         for record in records:
             data = ''
-            for key in mapping_record.keys():
+            for key in list(mapping_record.keys()):
                 field = record.findtext(key, default=None)
                 if field is not None:
                     data += "%s=\"%s\",\n" % (mapping_record[key], field.lower())
@@ -194,7 +197,7 @@ class Dir2Splunk:
             https://stackoverflow.com/questions/764235/dictionary-to-lowercase-in-python """
         if isinstance(obj, dict):
             t = type(obj)()
-            for k, v in obj.items():
+            for k, v in list(obj.items()):
                 t[k.lower()] = self.dict2lower(v)
             return t
         elif isinstance(obj, (list, set, tuple)):
