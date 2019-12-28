@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.0
+
+- Added support for Splunk 8.x and Python 3.x
+
 ## 3.1.0
 
 - Added field to make batch size configurable for IMAP inputs
