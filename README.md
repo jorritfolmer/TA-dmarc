@@ -19,6 +19,9 @@ an IMAP/POP3 mailbox or local directory with mitigations against:
 | 6.6            | Yes   | Yes
 | 7.0            | Yes   | Yes
 | 7.1            | Yes   | Yes
+| 7.2            | Yes   | Yes
+| 7.3            | Yes   | Yes
+| 8.0            | Yes   | Yes
 
 Additional requirements:
 
