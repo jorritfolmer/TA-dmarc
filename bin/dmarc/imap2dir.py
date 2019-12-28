@@ -52,7 +52,11 @@ class Imap2Dir(object):
 
     def get_imap_connectivity(self):
         """ Connect to imap server and close the connection """
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.options |= ssl.OP_NO_SSLv2
+        context.options |= ssl.OP_NO_SSLv3
+        context.options |= ssl.OP_NO_TLSv1
+        context.options |= ssl.OP_NO_TLSv1_1
         context.verify_mode = ssl.CERT_NONE
         try:
             if self.opt_use_ssl:
@@ -67,7 +71,11 @@ class Imap2Dir(object):
 
     def get_dmarc_messages(self):
         """ Connect to imap server and return a list of msg uids that match the subject 'Report domain:' """
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.options |= ssl.OP_NO_SSLv2
+        context.options |= ssl.OP_NO_SSLv3
+        context.options |= ssl.OP_NO_TLSv1
+        context.options |= ssl.OP_NO_TLSv1_1
         context.verify_mode = ssl.CERT_NONE
         messages = []
         try:
