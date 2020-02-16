@@ -305,7 +305,7 @@ If you want to reindex an entire mailbox, you can do so by deleting the TA-dmarc
 ```
 |inputlookup ta_dmarc_checkpointer_lookup
 |search state!="*input=dmarc_imap, server=imap.gmail.com*"
-|outputlookup ta_dmarc_checkpointer_lookup`
+|outputlookup ta_dmarc_checkpointer_lookup
 ```
 
 If you want to reindex a single DMARC report, you can do so by deleting its corresponding record from KVstore:
@@ -334,6 +334,7 @@ This add-on is maintained by Jorrit Folmer. These people and organisations have 
 
 - Christopher G Andrews (ChristopherGAndrews)
 - John (john-9c54a80b)
+- Martin Wright
 - Mike Kolk
 - Samuel Haper (sharperer)
 - Steve Myers (stmyers)

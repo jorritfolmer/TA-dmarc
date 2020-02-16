@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.2.1
+
+- Fixed resolving of IP addresses in src field.
+  (Thanks to Martin Wright for reporting this issue)
+
 ## 3.2.0
 
 - Added support for Splunk 8.x and Python 3.x

@@ -245,19 +245,27 @@ class Dir2Splunk(object):
         for record in records:
             data_ip = record.findtext('row/source_ip')
             row_tag = record.find("row")
+            record = yahoo.data(record)
+            record = self.dict2lower(record)
             if self.do_resolve:
                 try:
                     self.helper.log_debug("rua2json: resolving %s" % data_ip)
                     resolve = socket.gethostbyaddr(data_ip)
-                    backresolve = socket.gethostbyname_ex(resolve[0])
-                    if data_ip == backresolve[2][0]:
-                        # Add resolved ip to row
-                        ip_resolution = etree.SubElement(row_tag, "ip_resolution")
-                        ip_resolution.text = resolve[0]
                 except Exception:
                     self.helper.log_debug("rua2json: failed to resolve %s" % data_ip)
-            record = yahoo.data(record)
-            record = self.dict2lower(record)
+                else:
+                    try:
+                        self.helper.log_debug("rua2json: backresolving %s" % resolve[0])
+                        backresolve = socket.gethostbyname_ex(resolve[0])
+                    except Exception:
+                        self.helper.log_debug("rua2json: backresolving failed for %s" % resolve[0])
+                    else:
+                        if data_ip == backresolve[2][0]:
+                            # Add resolved ip to row
+                            self.helper.log_debug("rua2json: backresolving success: %s resolves to %s and back" % (data_ip, resolve[0]))
+                            record["record"]["row"]["ip_resolution"] = resolve[0]
+                        else:
+                            self.helper.log_debug("rua2json: backresolving failed: %s does NOT resolve to %s and back" % (data_ip, resolve[0]))
             feedback_list.append(record)
             # Aggregate report metadata, policy, record and xsd_validation
             result_dict.update(feedback_dict)
