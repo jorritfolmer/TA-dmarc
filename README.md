@@ -332,7 +332,10 @@ We use the following guidelines for developing this add-on:
 
 ### Argument validation for scheme=dmarc_imap: script running failed (killed by signal 9: Killed).
 
-You'll get this error message when adding a new input while some network firewall drops connection attempts to an IMAP or POP3 server. Splunk will kill the script after 30 seconds of waiting for a successful return, which never happens because of a firewall or related network issue.
+You'll get this error message when Splunk kills the script after 30 seconds of waiting for a successful return. This typically happens when:
+
+1. the connection to the IMAP or POP3 server times-out, due to a firewall or related network issue.
+1. the IMAP server is too slow or the batch-size is too high to return successfullly within 30 seconds
 
 ## Contributers
 
@@ -342,6 +345,7 @@ This add-on is maintained by Jorrit Folmer. These people and organisations have 
 - John (john-9c54a80b)
 - Martin Wright
 - Mike Kolk
+- Rishabh (infosecfreek)
 - Samuel Haper (sharperer)
 - Steve Myers (stmyers)
 - Steven Hilton (malvidin)
