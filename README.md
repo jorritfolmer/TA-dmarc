@@ -328,6 +328,15 @@ We use the following guidelines for developing this add-on:
 | Structure is left intact | DMARC XML is an hierarchical format | We use JSON output. Key=value output will be deprecated in future versions.
 | Data is enriched where appropriate | New fields can be added to provide better context or offer normalization of the existing data | XSD validation results and DNS resolutions are are added as additional fields. Compliance with CIM authentication datamodel too.
 
+## Troubleshooting
+
+### Argument validation for scheme=dmarc_imap: script running failed (killed by signal 9: Killed).
+
+You'll get this error message when Splunk kills the script after 30 seconds of waiting for a successful return. This typically happens when:
+
+1. the connection to the IMAP or POP3 server times-out, due to a firewall or related network issue.
+1. the IMAP server is too slow or the batch-size is too high to return successfullly within 30 seconds
+
 ## Contributers
 
 This add-on is maintained by Jorrit Folmer. These people and organisations have contributed pull requests, issues, ideas or otherwise spent time improving this add-on:
@@ -337,6 +346,7 @@ This add-on is maintained by Jorrit Folmer. These people and organisations have 
 - Martin Wright
 - Mike Kolk
 - Oli (gryphius)
+- Rishabh (infosecfreek)
 - Samuel Haper (sharperer)
 - Steve Myers (stmyers)
 - Steven Hilton (malvidin)
