@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.2.2
+
+- Fixed exception when using add-on together with listenOnIPv6=yes
+  (Thanks to gryphius for reporting this issue)
+
 ## 3.2.1
 
 - Fixed resolving of IP addresses in src field.

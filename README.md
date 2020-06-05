@@ -336,6 +336,7 @@ This add-on is maintained by Jorrit Folmer. These people and organisations have 
 - John (john-9c54a80b)
 - Martin Wright
 - Mike Kolk
+- Oli (gryphius)
 - Samuel Haper (sharperer)
 - Steve Myers (stmyers)
 - Steven Hilton (malvidin)
