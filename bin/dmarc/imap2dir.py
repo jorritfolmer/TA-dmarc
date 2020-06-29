@@ -181,6 +181,9 @@ class Imap2Dir(object):
             return True
         elif ctype == "application/x-gzip":
             return True
+        elif ctype == "application/octet-stream":
+            # Non-standard mimetype used by Amazon SES dmarc reports
+            return True
         elif ctype == "application-x-gzip":
             # Non-standard mimetype used by Comcast dmarc reports
             return True
