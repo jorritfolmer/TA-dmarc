@@ -336,6 +336,7 @@ You'll get this error message when Splunk kills the script after 30 seconds of w
 
 1. the connection to the IMAP or POP3 server times-out, due to a firewall or related network issue.
 1. the IMAP server is too slow or the batch-size is too high to return successfullly within 30 seconds
+1. you're running on Splunk Cloud and haven't yet asked Support to enable outbound IMAPS connections over port 993/tcp
 
 ## Contributers
 
