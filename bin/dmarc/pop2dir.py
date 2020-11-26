@@ -101,7 +101,8 @@ class Pop2Dir(object):
             but only if the subject matches Report domain """
         response = {}
         for uid in messages:
-            msg = "\n".join(self.server.retr(uid)[1])
+            self.helper.log_debug('get_dmarc_message_bodies: got uid "%s", using uid "%s"' % (uid, uid.split()[0]))
+            msg = "\n".join(self.server.retr(uid.split()[0])[1])
             msgobj = email.message_from_string(msg)
             if msgobj.get("Subject").find("Report domain:") >= 0:
                 self.helper.log_debug(

@@ -22,6 +22,7 @@ an IMAP/POP3 mailbox or local directory with mitigations against:
 | 7.2            | Yes   | Yes
 | 7.3            | Yes   | Yes
 | 8.0            | Yes   | Yes
+| 8.1            | Yes   | Likely. Untested.
 
 Additional requirements:
 
@@ -342,6 +343,7 @@ You'll get this error message when Splunk kills the script after 30 seconds of w
 
 This add-on is maintained by Jorrit Folmer. These people and organisations have contributed pull requests, issues, ideas or otherwise spent time improving this add-on:
 
+- Aaron Myers
 - Christopher G Andrews (ChristopherGAndrews)
 - John (john-9c54a80b)
 - Martin Wright
@@ -357,9 +359,9 @@ This add-on is maintained by Jorrit Folmer. These people and organisations have 
 
 The following software components are used in this add-on:
 
-1. [defusedxml](https://pypi.python.org/pypi/defusedxml/0.5.0) version 0.5.0 by Christian Heimes
+1. [defusedxml](https://pypi.python.org/pypi/defusedxml/0.6.0) version 0.8.0 by Christian Heimes
 2. [xmljson](https://pypi.python.org/pypi/xmljson) version 0.1.9 by S. Anand
-3. [IMAPClient](https://github.com/mjs/imapclient) version 1.0.2 by Menno Finlay-Smits
+3. [IMAPClient](https://github.com/mjs/imapclient) version 2.2.0 by Menno Finlay-Smits
 4. [dkimpy](https://pypi.python.org/pypi/dkimpy) version 0.6.2 by Scott Kitterman
 5. [dnspython](https://pypi.python.org/pypi/dnspython) version 1.15.0 by Bob Halley
 6. [Splunk Add-on Builder](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Overview) version 2.2.0 by Splunk and the [third-party software](https://docs.splunk.com/Documentation/AddonBuilder/2.2.0/UserGuide/Thirdpartysoftwarecredits) it uses

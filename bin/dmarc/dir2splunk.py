@@ -538,7 +538,6 @@ class Dir2Splunk(object):
                     "is_valid_rua_xmlfile: XML parse error in file %s with exception %s" %
                     (file, e))
                 f.close()
-                raise RuntimeError('Inspection!')
                 return False
             # Does it look like an aggregate report?
             res = self.validate_xml_xsd(file, "rua_ta_dmarc_minimal_v01.xsd")
@@ -705,7 +704,7 @@ class Dir2Splunk(object):
             self.helper.log_info(
                 "Ended processing incoming directory %s" %
                 self.dir)
-            #remove_tmp_dir(self.helper, self.tmp_dir)
+            remove_tmp_dir(self.helper, self.tmp_dir)
             self.helper.log_debug(
                 "process_incoming: removed tmp_dir %s" %
                 self.tmp_dir)

@@ -53,8 +53,7 @@ def collect_events(helper, ew):
             if d2s.check_dir():
                 d2s.process_incoming()
     finally:
-        pass
-        #remove_tmp_dir(helper, tmp_dir)
+        remove_tmp_dir(helper, tmp_dir)
 
 # PSEUDOCODE for refactor:
 #
