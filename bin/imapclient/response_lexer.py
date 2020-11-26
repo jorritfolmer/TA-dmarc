@@ -13,6 +13,8 @@ from __future__ import unicode_literals
 
 import six
 
+from .util import assert_imap_protocol
+
 __all__ = ["TokenSource"]
 
 CTRL_CHARS = frozenset(c for c in range(32))
@@ -51,7 +53,7 @@ class Lexer(object):
     """
 
     def __init__(self, text):
-        self.sources = (LiteralHandlingIter(self, chunk) for chunk in text)
+        self.sources = (LiteralHandlingIter(chunk) for chunk in text)
         self.current_source = None
 
     def read_until(self, stream_i, end_char, escape=True):
@@ -60,7 +62,7 @@ class Lexer(object):
             for nextchar in stream_i:
                 if escape and nextchar == BACKSLASH:
                     escaper = nextchar
-                    nextchar = six.next(stream_i)
+                    nextchar = next(stream_i)
                     if nextchar != escaper and nextchar != end_char:
                         token.append(escaper)  # Don't touch invalid escaping
                 elif nextchar == end_char:
@@ -97,7 +99,7 @@ class Lexer(object):
                     if nextchar in whitespace:
                         yield token
                     elif nextchar == DOUBLE_QUOTE:
-                        assert not token
+                        assert_imap_protocol(not token)
                         token.append(nextchar)
                         token.extend(read_until(stream_i, nextchar))
                         yield token
@@ -132,13 +134,12 @@ class Lexer(object):
 # literal.
 class LiteralHandlingIter:
 
-    def __init__(self, lexer, resp_record):
-        self.lexer = lexer
+    def __init__(self, resp_record):
         if isinstance(resp_record, tuple):
             # A 'record' with a string which includes a literal marker, and
             # the literal itself.
             self.src_text = resp_record[0]
-            assert self.src_text.endswith(b"}"), self.src_text
+            assert_imap_protocol(self.src_text.endswith(b"}"), self.src_text)
             self.literal = resp_record[1]
         else:
             # just a line with no literals.
@@ -163,7 +164,7 @@ class PushableIterator(object):
     def __next__(self):
         if self.pushed:
             return self.pushed.pop()
-        return six.next(self.it)
+        return next(self.it)
 
     # For Python 2 compatibility
     next = __next__

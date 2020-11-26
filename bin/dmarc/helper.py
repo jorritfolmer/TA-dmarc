@@ -24,24 +24,29 @@ import shutil
 # SOFTWARE.
 
 
-
 def create_tmp_dir(helper):
     try:
         tmpdir = tempfile.mkdtemp()
     except Exception as e:
-        raise Exception("Exception creating temporary directory %s: %s" % (tmpdir, str(e)))
+        raise Exception(
+            "Exception creating temporary directory %s: %s" %
+            (tmpdir, str(e)))
     else:
         helper.log_debug("Success creating temporary directory %s" % (tmpdir))
         return tmpdir
 
 
 def remove_tmp_dir(helper, tmpdir):
-    if tmpdir != None:
+    if tmpdir is not None:
         try:
             shutil.rmtree(tmpdir)
         except Exception as e:
-            raise Exception("Exception deleting temporary directory %s: %s" % (tmpdir, str(e)))
+            raise Exception(
+                "Exception deleting temporary directory %s: %s" %
+                (tmpdir, str(e)))
         else:
-            helper.log_debug("Success deleting temporary directory %s" % (tmpdir))
+            helper.log_debug(
+                "Success deleting temporary directory %s" %
+                (tmpdir))
             return True
     return False

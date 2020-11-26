@@ -36,7 +36,9 @@ def autoDetectXMLEncoding(buffer):
                           # this code successively tries to refine the default
                           # whenever it fails to refine, it falls back to 
                           # the last place encoding was set.
-    bytes = (byte1, byte2, byte3, byte4) = tuple(map(ord, buffer[0:4]))
+    bytes = buffer[0:4]
+    byte1 = buffer[0]
+    byte2 = buffer[1]
     enc_info = autodetect_dict.get(bytes, None)
 
     if not enc_info: # try autodetection again removing potentially 

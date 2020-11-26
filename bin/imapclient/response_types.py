@@ -14,12 +14,12 @@ from .util import to_unicode
 
 class Envelope(namedtuple("Envelope", "date subject from_ sender reply_to to " +
                           "cc bcc in_reply_to message_id")):
-    """Represents envelope structures of messages. Returned when parsing
+    r"""Represents envelope structures of messages. Returned when parsing
     ENVELOPE responses.
 
     :ivar date: A datetime instance that represents the "Date" header.
     :ivar subject: A string that contains the "Subject" header.
-    :ivar from\_: A tuple of Address objects that represent on or more
+    :ivar from\_: A tuple of Address objects that represent one or more
       addresses from the "From" header, or None if header does not exist.
     :ivar sender: As for from\_ but represents the "Sender" header.
     :ivar reply_to: As for from\_ but represents the "Reply-To" header.
@@ -80,9 +80,12 @@ class Address(namedtuple("Address", "name route mailbox host")):
     """
 
     def __str__(self):
-        return formataddr((
-            to_unicode(self.name),
-            to_unicode(self.mailbox) + '@' + to_unicode(self.host)))
+        if self.mailbox and self.host:
+            address = to_unicode(self.mailbox) + '@' + to_unicode(self.host)
+        else:
+            address = to_unicode(self.mailbox or self.host)
+
+        return formataddr((to_unicode(self.name), address))
 
 
 class SearchIds(list):

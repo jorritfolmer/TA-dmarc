@@ -22,14 +22,11 @@ import six
 from .datetime_util import parse_to_datetime
 from .response_lexer import TokenSource
 from .response_types import BodyData, Envelope, Address, SearchIds
+from .exceptions import ProtocolError
 
 xrange = six.moves.xrange
 
-__all__ = ['parse_response', 'parse_message_list', 'ParseError']
-
-
-class ParseError(ValueError):
-    pass
+__all__ = ['parse_response', 'parse_message_list']
 
 
 def parse_response(data):
@@ -42,7 +39,7 @@ def parse_response(data):
     return tuple(gen_parsed_response(data))
 
 
-_msg_id_pattern = re.compile("(\d+(?: +\d+)*)")
+_msg_id_pattern = re.compile(r"(\d+(?: +\d+)*)")
 
 
 def parse_message_list(data):
@@ -93,11 +90,11 @@ def gen_parsed_response(text):
     try:
         for token in src:
             yield atom(src, token)
-    except ParseError:
+    except ProtocolError:
         raise
     except ValueError:
         _, err, _ = sys.exc_info()
-        raise ParseError("%s: %s" % (str(err), token))
+        raise ProtocolError("%s: %s" % (str(err), token))
 
 
 def parse_fetch_response(text, normalise_times=True, uid_is_key=True):
@@ -113,20 +110,20 @@ def parse_fetch_response(text, normalise_times=True, uid_is_key=True):
     parsed_response = defaultdict(dict)
     while True:
         try:
-            msg_id = seq = _int_or_error(six.next(response),
+            msg_id = seq = _int_or_error(next(response),
                                          'invalid message ID')
         except StopIteration:
             break
 
         try:
-            msg_response = six.next(response)
+            msg_response = next(response)
         except StopIteration:
-            raise ParseError('unexpected EOF')
+            raise ProtocolError('unexpected EOF')
 
         if not isinstance(msg_response, tuple):
-            raise ParseError('bad response type: %s' % repr(msg_response))
+            raise ProtocolError('bad response type: %s' % repr(msg_response))
         if len(msg_response) % 2:
-            raise ParseError('uneven number of response items: %s' % repr(msg_response))
+            raise ProtocolError('uneven number of response items: %s' % repr(msg_response))
 
         # always return the sequence of the message, so it is available
         # even if we return keyed by UID.
@@ -159,10 +156,13 @@ def _int_or_error(value, error_text):
     try:
         return int(value)
     except (TypeError, ValueError):
-        raise ParseError('%s: %s' % (error_text, repr(value)))
+        raise ProtocolError('%s: %s' % (error_text, repr(value)))
 
 
 def _convert_INTERNALDATE(date_string, normalise_times=True):
+    if date_string is None:
+        return None
+
     try:
         return parse_to_datetime(date_string, normalise=normalise_times)
     except ValueError:
@@ -208,14 +208,15 @@ def atom(src, token):
         literal_len = int(token[1:-1])
         literal_text = src.current_literal
         if literal_text is None:
-            raise ParseError('No literal corresponds to %r' % token)
+            raise ProtocolError('No literal corresponds to %r' % token)
         if len(literal_text) != literal_len:
-            raise ParseError('Expecting literal of size %d, got %d' % (
+            raise ProtocolError('Expecting literal of size %d, got %d' % (
                 literal_len, len(literal_text)))
         return literal_text
     elif len(token) >= 2 and (token[:1] == token[-1:] == b'"'):
         return token[1:-1]
-    elif token.isdigit():
+    elif token.isdigit() and (token[:1] != b'0' or len(token) == 1):
+        # this prevents converting items like 0123 to 123
         return int(token)
     else:
         return token
@@ -228,7 +229,7 @@ def parse_tuple(src):
             return tuple(out)
         out.append(atom(src, token))
     # no terminator
-    raise ParseError('Tuple incomplete before "(%s"' % _fmt_tuple(out))
+    raise ProtocolError('Tuple incomplete before "(%s"' % _fmt_tuple(out))
 
 
 def _fmt_tuple(t):
