@@ -1,4 +1,3 @@
-from builtins import str
 import ta_dmarc_declare
 
 import os
