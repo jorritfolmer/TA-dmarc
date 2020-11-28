@@ -75,6 +75,14 @@ class Dir2Splunk(object):
         self.tmp_dir = None
         self.source_filename = ""
 
+    def myfsencode(self, file):
+        ''' Given a filename
+            Return the byte version of it, depending on the Python version '''
+        if sys.version_info[0] < 3:
+            return(file)
+        else:
+            return(os.fsencode(file))
+
     def list_incoming(self):
         """ Returns a list of files for the incoming directory """
         newfileslist = []
@@ -107,7 +115,7 @@ class Dir2Splunk(object):
         encoding of the filename because mongo doesn't like slashes in the key """
         seen_files = set()
         for file in fileslist:
-            key = "%s" % base64.b64encode(file)
+            key = "%s" % base64.b64encode(self.myfsencode(file))
             if self.helper.get_check_point(key) is not None:
                 seen_files.add(file)
         new_files = set(fileslist) - seen_files
@@ -126,7 +134,7 @@ class Dir2Splunk(object):
         """ Save a filename to the KVstore with base64 encoded key because
             mongo doesn't like os.sep characters in the key
         """
-        key = "%s" % base64.b64encode(file)
+        key = "%s" % base64.b64encode(self.myfsencode(file))
         value = "input=dmarc_dir, file='%s'" % file
         try:
             self.helper.save_check_point(key, value)

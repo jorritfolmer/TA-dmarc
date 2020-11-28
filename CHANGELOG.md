@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.4
+
+- Fixed exception in directory input. (Thanks to Georgi Georgiev for providing a patch)
+
 ## 3.2.3
 
 - Added support for Splunk 8.1. (Thanks to Aaron Myers for reporting the issue)
