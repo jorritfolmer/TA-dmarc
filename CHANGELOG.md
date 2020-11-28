@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.2.3
+
+- Added support for Splunk 8.1. (Thanks to Aaron Myers for reporting the issue)
+- Fixed Gmail POP3 issue 
+
 ## 3.2.2
 
 - Fixed exception when using add-on together with listenOnIPv6=yes

@@ -339,6 +339,14 @@ You'll get this error message when Splunk kills the script after 30 seconds of w
 1. the IMAP server is too slow or the batch-size is too high to return successfullly within 30 seconds
 1. you're running on Splunk Cloud and haven't yet asked Support to enable outbound IMAPS connections over port 993/tcp
 
+## Internal notes
+
+```
+$ cd /opt/splunk/etc/apps
+$ tar -zcvf /tmp/TA-dmarc.tar.gz TA-dmarc --exclude .git --exclude .gitignore --exclude local --exclude local.meta --exclude \*.py[co]
+$ splunk-appinspect inspect --mode precert /tmp/TA-dmarc.tar.gz
+```
+
 ## Contributers
 
 This add-on is maintained by Jorrit Folmer. These people and organisations have contributed pull requests, issues, ideas or otherwise spent time improving this add-on:
