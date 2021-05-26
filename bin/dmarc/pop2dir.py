@@ -69,6 +69,23 @@ class Pop2Dir(object):
                 'get_pop3_connectivity: successfully connected to %s' %
                 self.opt_pop3_server)
 
+    def byte2str(self, obj):
+        """ Convert byte string onto Unicode string using UTF-8 encoding
+            Works with byte strings and byte string lists """
+        encoding = "utf-8"
+        if isinstance(obj, list):
+            if len(obj)>0 and not isinstance(obj[0], str):
+                self.helper.log_debug(
+                    "conversion from list of %s onto list of <class 'str'>" %
+                    type(obj[0]))
+                return [ s.decode(encoding) for s in obj ]
+            elif not isinstance(obj, str):
+                self.helper.log_debug(
+                    "conversion from %s onto <class 'str'>" %
+                    type(obj))
+                return obj.decode(encoding)
+            return obj
+
     def get_dmarc_messages(self):
         """ Connect to pop3 server and return a list of ALL msg uids
             Unlike the IMAP equivalent filtering based on Subject is done elsewhere """
@@ -90,7 +107,7 @@ class Pop2Dir(object):
             self.helper.log_debug(
                 'get_dmarc_messages: successfully connected to %s' %
                 self.opt_pop3_server)
-            messages = self.server.uidl()[1]
+            messages = self.byte2str(self.server.uidl()[1])
             self.helper.log_info(
                 'get_dmarc_messages: %d messages' %
                 len(messages))
@@ -102,9 +119,9 @@ class Pop2Dir(object):
         response = {}
         for uid in messages:
             self.helper.log_debug('get_dmarc_message_bodies: got uid "%s", using uid "%s"' % (uid, uid.split()[0]))
-            msg = "\n".join(self.server.retr(uid.split()[0])[1])
+            msg = "\n".join(self.byte2str(self.server.retr(uid.split()[0])[1]))
             msgobj = email.message_from_string(msg)
-            if msgobj.get("Subject").find("Report domain:") >= 0:
+            if "report domain:" in msgobj.get("Subject").lower():
                 self.helper.log_debug(
                     'get_dmarc_message_bodies: found dmarc message: uid %s with subject %s' %
                     (uid, msgobj.get("Subject")))
@@ -252,9 +269,6 @@ class Pop2Dir(object):
             if self.helper.get_check_point(key) is not None:
                 seen_uids.add(uid)
         new_uids = set(messages) - seen_uids
-        self.helper.log_debug(
-            'filter_seen_messages: uids on pop3   %s' %
-            set(messages))
         self.helper.log_debug(
             'filter_seen_messages: uids on pop3   %s' %
             set(messages))
