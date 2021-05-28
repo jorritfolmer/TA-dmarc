@@ -191,7 +191,7 @@ class Pop2Dir(object):
                         'save_reports_from_message_bodies: skipping content-type %s of msg uid %s' %
                         (ctype, uid))
             # mark msg as seen in KVstore
-            self.save_check_point(uid, msg)
+            self.save_check_point(uid.split()[1], msg)
         return filelist
 
     def check_eligible_mimetype(self, ctype, uid):
@@ -248,7 +248,7 @@ class Pop2Dir(object):
         seen_uids = set()
         for uid in messages:
             key = "%s_%s_%s" % (self.opt_pop3_server,
-                                self.opt_global_account["username"], uid)
+                                self.opt_global_account["username"], uid.split()[1])
             if self.helper.get_check_point(key) is not None:
                 seen_uids.add(uid)
         new_uids = set(messages) - seen_uids
