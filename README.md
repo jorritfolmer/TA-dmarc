@@ -353,6 +353,8 @@ This add-on is maintained by Jorrit Folmer. These people and organisations have 
 
 - Aaron Myers
 - Christopher G Andrews (ChristopherGAndrews)
+- Constantin Oshmyan (COshmyan)
+- Diogo Silva (diogofgm)
 - Georgi Georgiev
 - John (john-9c54a80b)
 - Martin Wright

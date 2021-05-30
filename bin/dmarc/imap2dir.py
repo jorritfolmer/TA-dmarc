@@ -190,7 +190,7 @@ class Imap2Dir(object):
         filelist = []
         for uid, data in list(response.items()):
             if self.opt_validate_dkim:
-                self.dkim_verify(data[b'RFC822'], uid)
+                self.dkim_verify(data.get(b'RFC822',''), uid)
             msg = email.message_from_string(data.get(b'RFC822','').decode("utf-8", "replace"))
             if msg.is_multipart():
                 self.helper.log_debug(

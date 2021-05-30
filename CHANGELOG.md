@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.2.5
+
+- Fixed Py2/3 issues in POP3 input (Thanks to Constantin Oshmyan for reporting and fixing the issue)
+- Fixed POP3 uidl persistence issue (Thanks to Constantin Oshmyan for reporting and fixing the issue)
+- Fixed exception when encountering non-RFC822 items on DavMail (thanks to Diogo Silva for reporting the issue)
+
 ## 3.2.4
 
 - Fixed exception in directory input. (Thanks to Georgi Georgiev for providing a patch)
