@@ -2,6 +2,7 @@
 
 ## 3.2.5
 
+- Fixed str decode exception (Thanks to George Luong for reporing the issue)
 - Fixed Py2/3 issues in POP3 input (Thanks to Constantin Oshmyan for reporting and fixing the issue)
 - Fixed POP3 uidl persistence issue (Thanks to Constantin Oshmyan for reporting and fixing the issue)
 - Fixed exception when encountering non-RFC822 items on DavMail (thanks to Diogo Silva for reporting the issue)

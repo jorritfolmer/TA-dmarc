@@ -23,6 +23,7 @@ an IMAP/POP3 mailbox or local directory with mitigations against:
 | 7.3            | Yes   | Yes
 | 8.0            | Yes   | Yes
 | 8.1            | Yes   | Likely. Untested.
+| 8.2            | Yes   | Likely. Untested.
 
 Additional requirements:
 
@@ -355,6 +356,7 @@ This add-on is maintained by Jorrit Folmer. These people and organisations have 
 - Christopher G Andrews (ChristopherGAndrews)
 - Constantin Oshmyan (COshmyan)
 - Diogo Silva (diogofgm)
+- George Luong
 - Georgi Georgiev
 - John (john-9c54a80b)
 - Martin Wright
