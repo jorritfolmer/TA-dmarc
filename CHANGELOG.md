@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.0.0
+
+- Recreated from scratch using Splunk Add-on Builder v4.1.1 to address various Splunk Cloud requirements
+
 ## 3.2.5
 
 - Fixed str decode exception (Thanks to George Luong for reporing the issue)

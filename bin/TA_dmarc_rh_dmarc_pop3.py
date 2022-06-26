@@ -42,7 +42,7 @@ fields = [
     ), 
     field.RestField(
         'pop3_server',
-        required=False,
+        required=True,
         encrypted=False,
         default=None,
         validator=validator.String(
@@ -73,7 +73,7 @@ fields = [
     ), 
     field.RestField(
         'output_format',
-        required=False,
+        required=True,
         encrypted=False,
         default='json',
         validator=None

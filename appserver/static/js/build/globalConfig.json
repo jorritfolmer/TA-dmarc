@@ -2,9 +2,9 @@
     "meta": {
         "name": "TA-dmarc",
         "displayName": "TA-dmarc add-on for Splunk",
-        "version": "3.1.0",
-        "apiVersion": "3.0.0",
-        "restRoot": "TA_dmarc"
+        "version": "4.0.0",
+        "restRoot": "TA_dmarc",
+        "schemaVersion": "0.0.3"
     },
     "pages": {
         "configuration": {
@@ -171,8 +171,8 @@
                         "label": "Global Account"
                     },
                     {
-                        "field": "pop3_server",
-                        "label": "POP3 server"
+                        "field": "imap_server",
+                        "label": "IMAP server"
                     },
                     {
                         "field": "resolve_ip",
@@ -187,8 +187,20 @@
                         "label": "Validate DKIM"
                     },
                     {
+                        "field": "imap_mailbox",
+                        "label": "IMAP mailbox"
+                    },
+                    {
                         "field": "output_format",
                         "label": "Output format"
+                    },
+                    {
+                        "field": "batch_size",
+                        "label": "Batch size"
+                    },
+                    {
+                        "field": "pop3_server",
+                        "label": "POP3 server"
                     },
                     {
                         "field": "dmarc_directory",
@@ -197,18 +209,6 @@
                     {
                         "field": "quiet_time",
                         "label": "Quiet time"
-                    },
-                    {
-                        "field": "imap_server",
-                        "label": "IMAP server"
-                    },
-                    {
-                        "field": "imap_mailbox",
-                        "label": "IMAP mailbox"
-                    },
-                    {
-                        "field": "batch_size",
-                        "label": "Batch size"
                     }
                 ],
                 "actions": [
@@ -219,263 +219,6 @@
                 ]
             },
             "services": [
-                {
-                    "name": "dmarc_pop3",
-                    "title": "DMARC pop3",
-                    "entity": [
-                        {
-                            "field": "name",
-                            "label": "Name",
-                            "type": "text",
-                            "help": "Enter a unique name for the data input",
-                            "required": true,
-                            "validators": [
-                                {
-                                    "type": "regex",
-                                    "pattern": "^[a-zA-Z]\\w*$",
-                                    "errorMsg": "Input Name must start with a letter and followed by alphabetic letters, digits or underscores."
-                                },
-                                {
-                                    "type": "string",
-                                    "minLength": 1,
-                                    "maxLength": 100,
-                                    "errorMsg": "Length of input name should be between 1 and 100"
-                                }
-                            ]
-                        },
-                        {
-                            "field": "interval",
-                            "label": "Interval",
-                            "type": "text",
-                            "required": true,
-                            "help": "Time interval of input in seconds.",
-                            "validators": [
-                                {
-                                    "type": "regex",
-                                    "pattern": "^\\-[1-9]\\d*$|^\\d*$",
-                                    "errorMsg": "Interval must be an integer."
-                                }
-                            ]
-                        },
-                        {
-                            "field": "index",
-                            "label": "Index",
-                            "type": "singleSelect",
-                            "defaultValue": "default",
-                            "options": {
-                                "endpointUrl": "data/indexes",
-                                "blackList": "^_.*$",
-                                "createSearchChoice": true
-                            },
-                            "required": true,
-                            "validators": [
-                                {
-                                    "type": "string",
-                                    "minLength": 1,
-                                    "maxLength": 80,
-                                    "errorMsg": "Length of index name should be between 1 and 80."
-                                }
-                            ]
-                        },
-                        {
-                            "field": "global_account",
-                            "label": "Global Account",
-                            "help": "",
-                            "required": true,
-                            "type": "singleSelect",
-                            "options": {
-                                "referenceName": "account"
-                            }
-                        },
-                        {
-                            "field": "pop3_server",
-                            "label": "POP3 server",
-                            "help": "Connect to the specified POP3 server with TLS (port 995)",
-                            "required": false,
-                            "type": "text",
-                            "validators": [
-                                {
-                                    "type": "string",
-                                    "minLength": 0,
-                                    "maxLength": 8192,
-                                    "errorMsg": "Max length of text input is 8192"
-                                }
-                            ]
-                        },
-                        {
-                            "field": "resolve_ip",
-                            "label": "Resolve IP",
-                            "help": "Resolve the source_ip field in the DMARC aggregate reports.",
-                            "required": false,
-                            "type": "checkbox",
-                            "defaultValue": true
-                        },
-                        {
-                            "field": "validate_xml",
-                            "label": "Validate XML",
-                            "help": "Validate the aggregate reports against the DMARC XSD. Results are included in the field vendor_rua_xsd_validation.",
-                            "required": false,
-                            "type": "checkbox",
-                            "defaultValue": true
-                        },
-                        {
-                            "field": "validate_dkim",
-                            "label": "Validate DKIM",
-                            "help": "(Beta) Validate the DKIM signatures in the mail headers. Results are currently only available in DEBUG log.",
-                            "required": false,
-                            "type": "checkbox"
-                        },
-                        {
-                            "field": "output_format",
-                            "label": "Output format",
-                            "help": "",
-                            "required": false,
-                            "type": "singleSelect",
-                            "defaultValue": "json",
-                            "options": {
-                                "disableSearch": true,
-                                "autoCompleteFields": [
-                                    {
-                                        "value": "json",
-                                        "label": "JSON"
-                                    },
-                                    {
-                                        "value": "kv",
-                                        "label": "KV (legacy)"
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "dmarc_directory",
-                    "title": "DMARC directory",
-                    "entity": [
-                        {
-                            "field": "name",
-                            "label": "Name",
-                            "type": "text",
-                            "help": "Enter a unique name for the data input",
-                            "required": true,
-                            "validators": [
-                                {
-                                    "type": "regex",
-                                    "pattern": "^[a-zA-Z]\\w*$",
-                                    "errorMsg": "Input Name must start with a letter and followed by alphabetic letters, digits or underscores."
-                                },
-                                {
-                                    "type": "string",
-                                    "minLength": 1,
-                                    "maxLength": 100,
-                                    "errorMsg": "Length of input name should be between 1 and 100"
-                                }
-                            ]
-                        },
-                        {
-                            "field": "interval",
-                            "label": "Interval",
-                            "type": "text",
-                            "required": true,
-                            "help": "Time interval of input in seconds.",
-                            "validators": [
-                                {
-                                    "type": "regex",
-                                    "pattern": "^\\-[1-9]\\d*$|^\\d*$",
-                                    "errorMsg": "Interval must be an integer."
-                                }
-                            ]
-                        },
-                        {
-                            "field": "index",
-                            "label": "Index",
-                            "type": "singleSelect",
-                            "defaultValue": "default",
-                            "options": {
-                                "endpointUrl": "data/indexes",
-                                "blackList": "^_.*$",
-                                "createSearchChoice": true
-                            },
-                            "required": true,
-                            "validators": [
-                                {
-                                    "type": "string",
-                                    "minLength": 1,
-                                    "maxLength": 80,
-                                    "errorMsg": "Length of index name should be between 1 and 80."
-                                }
-                            ]
-                        },
-                        {
-                            "field": "dmarc_directory",
-                            "label": "Directory",
-                            "help": "Directory containing DMARC aggregate reports",
-                            "required": true,
-                            "type": "text",
-                            "validators": [
-                                {
-                                    "type": "string",
-                                    "minLength": 0,
-                                    "maxLength": 8192,
-                                    "errorMsg": "Max length of text input is 8192"
-                                }
-                            ]
-                        },
-                        {
-                            "field": "quiet_time",
-                            "label": "Quiet time",
-                            "help": "Ignore files that have a modification time of less than n seconds ago.",
-                            "required": true,
-                            "type": "text",
-                            "defaultValue": "10",
-                            "validators": [
-                                {
-                                    "type": "string",
-                                    "minLength": 0,
-                                    "maxLength": 8192,
-                                    "errorMsg": "Max length of text input is 8192"
-                                }
-                            ]
-                        },
-                        {
-                            "field": "resolve_ip",
-                            "label": "Resolve IP",
-                            "help": "Resolve the source_ip field in the DMARC XML aggregate report",
-                            "required": false,
-                            "type": "checkbox",
-                            "defaultValue": true
-                        },
-                        {
-                            "field": "validate_xml",
-                            "label": "Validate XML",
-                            "help": "Validate the aggregate report XML against the DMARC XSD. Results are included in the field vendor_rua_xsd_validation.",
-                            "required": false,
-                            "type": "checkbox",
-                            "defaultValue": true
-                        },
-                        {
-                            "field": "output_format",
-                            "label": "Output format",
-                            "help": "",
-                            "required": true,
-                            "type": "singleSelect",
-                            "defaultValue": "json",
-                            "options": {
-                                "disableSearch": true,
-                                "autoCompleteFields": [
-                                    {
-                                        "value": "json",
-                                        "label": "JSON"
-                                    },
-                                    {
-                                        "value": "kv",
-                                        "label": "KV (legacy)"
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                },
                 {
                     "name": "dmarc_imap",
                     "title": "DMARC imap",
@@ -521,8 +264,8 @@
                             "defaultValue": "default",
                             "options": {
                                 "endpointUrl": "data/indexes",
-                                "blackList": "^_.*$",
-                                "createSearchChoice": true
+                                "createSearchChoice": true,
+                                "denyList": "^_.*$"
                             },
                             "required": true,
                             "validators": [
@@ -604,7 +347,6 @@
                             "help": "",
                             "required": true,
                             "type": "singleSelect",
-                            "defaultValue": "json",
                             "options": {
                                 "disableSearch": true,
                                 "autoCompleteFields": [
@@ -634,6 +376,263 @@
                                     "errorMsg": "Max length of text input is 8192"
                                 }
                             ]
+                        }
+                    ]
+                },
+                {
+                    "name": "dmarc_pop3",
+                    "title": "DMARC pop3",
+                    "entity": [
+                        {
+                            "field": "name",
+                            "label": "Name",
+                            "type": "text",
+                            "help": "Enter a unique name for the data input",
+                            "required": true,
+                            "validators": [
+                                {
+                                    "type": "regex",
+                                    "pattern": "^[a-zA-Z]\\w*$",
+                                    "errorMsg": "Input Name must start with a letter and followed by alphabetic letters, digits or underscores."
+                                },
+                                {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 100,
+                                    "errorMsg": "Length of input name should be between 1 and 100"
+                                }
+                            ]
+                        },
+                        {
+                            "field": "interval",
+                            "label": "Interval",
+                            "type": "text",
+                            "required": true,
+                            "help": "Time interval of input in seconds.",
+                            "validators": [
+                                {
+                                    "type": "regex",
+                                    "pattern": "^\\-[1-9]\\d*$|^\\d*$",
+                                    "errorMsg": "Interval must be an integer."
+                                }
+                            ]
+                        },
+                        {
+                            "field": "index",
+                            "label": "Index",
+                            "type": "singleSelect",
+                            "defaultValue": "default",
+                            "options": {
+                                "endpointUrl": "data/indexes",
+                                "createSearchChoice": true,
+                                "denyList": "^_.*$"
+                            },
+                            "required": true,
+                            "validators": [
+                                {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 80,
+                                    "errorMsg": "Length of index name should be between 1 and 80."
+                                }
+                            ]
+                        },
+                        {
+                            "field": "global_account",
+                            "label": "Global Account",
+                            "help": "",
+                            "required": true,
+                            "type": "singleSelect",
+                            "options": {
+                                "referenceName": "account"
+                            }
+                        },
+                        {
+                            "field": "pop3_server",
+                            "label": "POP3 server",
+                            "help": "Connect to the specified POP3 server with TLS (port 995)",
+                            "required": true,
+                            "type": "text",
+                            "validators": [
+                                {
+                                    "type": "string",
+                                    "minLength": 0,
+                                    "maxLength": 8192,
+                                    "errorMsg": "Max length of text input is 8192"
+                                }
+                            ]
+                        },
+                        {
+                            "field": "resolve_ip",
+                            "label": "Resolve IP",
+                            "help": "Resolve the source_ip field in the DMARC aggregate reports.",
+                            "required": false,
+                            "type": "checkbox",
+                            "defaultValue": true
+                        },
+                        {
+                            "field": "validate_xml",
+                            "label": "Validate XML",
+                            "help": "Validate the aggregate reports against the DMARC XSD. Results are included in the field vendor_rua_xsd_validation.",
+                            "required": false,
+                            "type": "checkbox",
+                            "defaultValue": true
+                        },
+                        {
+                            "field": "validate_dkim",
+                            "label": "Validate DKIM",
+                            "help": "(Beta) Validate the DKIM signatures in the mail headers. Results are currently only available in DEBUG log.",
+                            "required": false,
+                            "type": "checkbox"
+                        },
+                        {
+                            "field": "output_format",
+                            "label": "Output format",
+                            "help": "",
+                            "required": true,
+                            "type": "singleSelect",
+                            "defaultValue": "json",
+                            "options": {
+                                "disableSearch": true,
+                                "autoCompleteFields": [
+                                    {
+                                        "value": "json",
+                                        "label": "JSON"
+                                    },
+                                    {
+                                        "value": "kv",
+                                        "label": "KV (legacy)"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "dmarc_directory",
+                    "title": "DMARC directory",
+                    "entity": [
+                        {
+                            "field": "name",
+                            "label": "Name",
+                            "type": "text",
+                            "help": "Enter a unique name for the data input",
+                            "required": true,
+                            "validators": [
+                                {
+                                    "type": "regex",
+                                    "pattern": "^[a-zA-Z]\\w*$",
+                                    "errorMsg": "Input Name must start with a letter and followed by alphabetic letters, digits or underscores."
+                                },
+                                {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 100,
+                                    "errorMsg": "Length of input name should be between 1 and 100"
+                                }
+                            ]
+                        },
+                        {
+                            "field": "interval",
+                            "label": "Interval",
+                            "type": "text",
+                            "required": true,
+                            "help": "Time interval of input in seconds.",
+                            "validators": [
+                                {
+                                    "type": "regex",
+                                    "pattern": "^\\-[1-9]\\d*$|^\\d*$",
+                                    "errorMsg": "Interval must be an integer."
+                                }
+                            ]
+                        },
+                        {
+                            "field": "index",
+                            "label": "Index",
+                            "type": "singleSelect",
+                            "defaultValue": "default",
+                            "options": {
+                                "endpointUrl": "data/indexes",
+                                "createSearchChoice": true,
+                                "denyList": "^_.*$"
+                            },
+                            "required": true,
+                            "validators": [
+                                {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 80,
+                                    "errorMsg": "Length of index name should be between 1 and 80."
+                                }
+                            ]
+                        },
+                        {
+                            "field": "dmarc_directory",
+                            "label": "Directory",
+                            "help": "Directory containing DMARC aggregate reports",
+                            "required": true,
+                            "type": "text",
+                            "validators": [
+                                {
+                                    "type": "string",
+                                    "minLength": 0,
+                                    "maxLength": 8192,
+                                    "errorMsg": "Max length of text input is 8192"
+                                }
+                            ]
+                        },
+                        {
+                            "field": "quiet_time",
+                            "label": "Quiet time",
+                            "help": "Ignore files that have a modification time of less than n seconds ago.",
+                            "required": true,
+                            "type": "text",
+                            "defaultValue": "10",
+                            "validators": [
+                                {
+                                    "type": "string",
+                                    "minLength": 0,
+                                    "maxLength": 8192,
+                                    "errorMsg": "Max length of text input is 8192"
+                                }
+                            ]
+                        },
+                        {
+                            "field": "resolve_ip",
+                            "label": "Resolve IP",
+                            "help": "Resolve the source_ip field in the DMARC XML aggregate report",
+                            "required": false,
+                            "type": "checkbox",
+                            "defaultValue": true
+                        },
+                        {
+                            "field": "validate_xml",
+                            "label": "Validate XML",
+                            "help": "Validate the aggregate report XML against the DMARC XSD. Results are included in the field vendor_rua_xsd_validation.",
+                            "required": false,
+                            "type": "checkbox",
+                            "defaultValue": true
+                        },
+                        {
+                            "field": "output_format",
+                            "label": "Output format",
+                            "help": "",
+                            "required": true,
+                            "type": "singleSelect",
+                            "defaultValue": "json",
+                            "options": {
+                                "disableSearch": true,
+                                "autoCompleteFields": [
+                                    {
+                                        "value": "json",
+                                        "label": "JSON"
+                                    },
+                                    {
+                                        "value": "kv",
+                                        "label": "KV (legacy)"
+                                    }
+                                ]
+                            }
                         }
                     ]
                 }

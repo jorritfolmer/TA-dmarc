@@ -5,7 +5,7 @@
     "id": {
       "group": null,
       "name": "TA-dmarc",
-      "version": "3.2.5"
+      "version": "4.0.0"
     },
     "author": [
       {
@@ -15,7 +15,7 @@
       }
     ],
     "releaseDate": null,
-    "description": "TA-dmarc add-on for Splunk",
+    "description": "Add-on for ingesting DMARC aggregate reports into Splunk",
     "classification": {
       "intendedAudience": null,
       "categories": [],

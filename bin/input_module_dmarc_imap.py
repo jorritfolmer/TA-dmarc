@@ -6,14 +6,19 @@ from dmarc.helper import create_tmp_dir
 from dmarc.helper import remove_tmp_dir
 
 
-# IMPORTANT
-# Edit only the validate_input and collect_events functions.
-# Do not edit any other part in this file.
-# This file is generated only once when creating the modular input.
+'''
+    IMPORTANT
+    Edit only the validate_input and collect_events functions.
+    Do not edit any other part in this file.
+    This file is generated only once when creating the modular input.
+'''
+'''
+# For advanced users, if you want to create single instance mod input, uncomment this method.
+def use_single_instance_mode():
+    return True
+'''
 
 def validate_input(helper, definition):
-    """Implement your own validation logic to validate the input stanza configurations"""
-
     opt_imap_server    = definition.parameters.get("imap_server", None)
     opt_imap_mailbox   = definition.parameters.get("imap_mailbox", None)
     opt_use_ssl        = True
@@ -29,8 +34,6 @@ def validate_input(helper, definition):
         remove_tmp_dir(helper, tmp_dir)
 
 def collect_events(helper, ew):
-    """Implement your data collection logic here """
-
     opt_imap_server    = helper.get_arg("imap_server")
     opt_imap_mailbox   = helper.get_arg("imap_mailbox")
     opt_use_ssl        = True

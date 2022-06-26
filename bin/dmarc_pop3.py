@@ -7,7 +7,7 @@ import datetime
 import json
 
 import modinput_wrapper.base_modinput
-from solnlib.packages.splunklib import modularinput as smi
+from splunklib import modularinput as smi
 
 
 
@@ -52,7 +52,7 @@ class ModInputdmarc_pop3(modinput_wrapper.base_modinput.BaseModInput):
                                          required_on_edit=False))
         scheme.add_argument(smi.Argument("pop3_server", title="POP3 server",
                                          description="Connect to the specified POP3 server with TLS (port 995)",
-                                         required_on_create=False,
+                                         required_on_create=True,
                                          required_on_edit=False))
         scheme.add_argument(smi.Argument("resolve_ip", title="Resolve IP",
                                          description="Resolve the source_ip field in the DMARC aggregate reports.",

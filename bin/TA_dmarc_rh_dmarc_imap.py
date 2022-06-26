@@ -85,7 +85,7 @@ fields = [
         'output_format',
         required=True,
         encrypted=False,
-        default='json',
+        default=None,
         validator=None
     ), 
     field.RestField(

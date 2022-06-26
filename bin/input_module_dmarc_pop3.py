@@ -5,15 +5,19 @@ from dmarc.dir2splunk import Dir2Splunk
 from dmarc.helper import create_tmp_dir
 from dmarc.helper import remove_tmp_dir
 
-
-# IMPORTANT
-# Edit only the validate_input and collect_events functions.
-# Do not edit any other part in this file.
-# This file is generated only once when creating the modular input.
+'''
+    IMPORTANT
+    Edit only the validate_input and collect_events functions.
+    Do not edit any other part in this file.
+    This file is generated only once when creating the modular input.
+'''
+'''
+# For advanced users, if you want to create single instance mod input, uncomment this method.
+def use_single_instance_mode():
+    return True
+'''
 
 def validate_input(helper, definition):
-    """Implement your own validation logic to validate the input stanza configurations"""
-
     opt_pop3_server    = definition.parameters.get("pop3_server", None)
     opt_use_ssl        = True
     opt_global_account = definition.parameters.get('global_account', None)
@@ -27,8 +31,6 @@ def validate_input(helper, definition):
         remove_tmp_dir(helper, tmp_dir)
 
 def collect_events(helper, ew):
-    """Implement your data collection logic here """
-
     opt_pop3_server    = helper.get_arg("pop3_server")
     opt_use_ssl        = True
     opt_global_account = helper.get_arg('global_account')
