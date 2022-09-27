@@ -7,7 +7,7 @@ import email
 from imapclient import IMAPClient
 import dkim
 import dns
-
+import msal
 
 # Copyright 2017-2020 Jorrit Folmer
 #
@@ -43,16 +43,23 @@ class Imap2Dir(object):
             tmp_dir,
             opt_use_ssl,
             opt_global_account,
+            opt_oauth2_authority,
+            opt_oauth2_scope,
             opt_imap_mailbox,
+            opt_imap_folder,
             opt_validate_dkim,
             opt_batch_size):
+            
         # Instance variables:
         self.helper = helper
         self.opt_imap_server = opt_imap_server
-        self.opt_imap_mailbox = 'INBOX' if opt_imap_mailbox is None else opt_imap_mailbox
+        self.opt_imap_mailbox = opt_imap_mailbox
+        self.opt_imap_folder = 'INBOX' if opt_imap_folder is None else opt_imap_folder
         self.opt_validate_dkim = opt_validate_dkim
         self.opt_use_ssl = opt_use_ssl
         self.opt_global_account = opt_global_account
+        self.opt_oauth2_authority = opt_oauth2_authority
+        self.opt_oauth2_scope = opt_oauth2_scope
         self.opt_batch_size = 100 if opt_batch_size is None else opt_batch_size
         self.tmp_dir = tmp_dir
         self.server = None
@@ -111,16 +118,38 @@ class Imap2Dir(object):
             self.helper.log_debug(
                 'get_dmarc_messages: successfully connected to %s' %
                 self.opt_imap_server)
-            self.server.login(
-                self.opt_global_account["username"],
-                self.opt_global_account["password"])
-            info = self.server.select_folder(self.opt_imap_mailbox)
+
+            ### 
+            # OAauth2 vs BASIC login            
+            if(self.opt_oauth2_authority is None):            
+                self.server.login(
+                    self.opt_global_account["username"],
+                    self.opt_global_account["password"])
+ 
+            else:
+                app = msal.ConfidentialClientApplication(
+                        client_id = self.opt_global_account["username"],
+                        client_credential = self.opt_global_account["password"],
+                        authority = self.opt_oauth2_authority
+                    )
+
+                result = None
+                
+                result = app.acquire_token_for_client(self.opt_oauth2_scope)
+
+                if "access_token" in result:
+                    self.server.oauth2_login(
+                        self.opt_imap_mailbox,
+                        result['access_token'])
+            ###
+
+            info = self.server.select_folder(self.opt_imap_folder)
             self.helper.log_info(
-                'get_dmarc_messages: %s messages in folder %s' % (info.get(b'EXISTS', -1) , self.opt_imap_mailbox))
+                'get_dmarc_messages: %s messages in folder %s' % (info.get(b'EXISTS', -1) , self.opt_imap_folder))
             messages = self.server.search('SUBJECT "Report domain:"')
             self.helper.log_info(
                 'get_dmarc_messages: %d messages in folder %s match subject "Report domain:"' %
-                (len(messages), self.opt_imap_mailbox))
+                (len(messages), self.opt_imap_folder))
         return messages
 
     def get_dmarc_message_bodies(self, messages):
@@ -129,7 +158,7 @@ class Imap2Dir(object):
         response = dict()
         messageslist = list(messages)
         for x in range(0, len(messageslist), fetch_size):
-            self.helper.log_info('get_dmarc_message_bodies: getting messages %s to %s' % (
+            self.helper.log_info('get_dmarc_message_bodies: getting messages %s to %s' % (            
                 str(x), str(min(x + fetch_size, len(messageslist)))))
             response.update(self.server.fetch(
                 set(messageslist[x:x + fetch_size]), [b'RFC822']))
