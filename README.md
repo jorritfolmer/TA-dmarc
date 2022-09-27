@@ -27,7 +27,7 @@ an IMAP/POP3 mailbox or local directory with mitigations against:
 
 Additional requirements:
 
-* Splunk heavy forwarder instance: Because of Python dependencies Splunk Universal Forwarder is not supported
+* Splunk heavy forwarder or cloud IDM instance: Because of Python dependencies Splunk Universal Forwarder is not supported
 * KVstore: used to keep track of which IMAP messages or local files have already been processed. KVstore is enabled by default on Splunk instances.
 
 ## Upgrading from previous versions
@@ -86,8 +86,8 @@ This assumes you have an offline method for getting DMARC attachments to this di
 In the Configuration tab, create a new account:
 
 * Account Name: descriptive account name, e.g. google_dmarc_mailbox
-* Username: the account to identify with
-* Password: the password to authenticate with
+* Username: the account to identify with (or the OAuth2 Client ID)
+* Password: the password to authenticate with (or the OAuth2 Client Secret)
 
 ![Create global account](appserver/static/screenshot_create_global_account.png)
 
@@ -95,13 +95,13 @@ In the Configuration tab, create a new account:
 
 This add-on can ingest DMARC aggregate reports from:
 
-* IMAP mailboxes
-* POP mailboxes
+* IMAP mailboxes using basic or OAuth2 authentication
+* POP mailboxes using basic authentication
 * Local directories (for offline environments)
 
 ![Screenshot create new input](appserver/static/screenshot.png)
 
-### DMARC imap/pop input
+### DMARC imap/pop input  (basic authentication)
 
 Go to the add-on's input tab and configure a new modular input by clicking on the "Inputs" menu:
 
@@ -120,6 +120,36 @@ Go to the add-on's input tab and configure a new modular input by clicking on th
    * Validate DKIM: Whether or not to validate the DKIM signature(s) in the mail
    * IMAP mailbox: Select the specific IMAP mailbox folder to poll. Default: INBOX
    * Output format: Send events to Splunk in JSON format (default) or key=value (left for compatibility reasons)
+
+### DMARC imap input  (OAuth2 authentication)
+
+Go to the add-on's input tab and configure a new modular input by clicking on the "Inputs" menu:
+
+SCREENSHOT_NEEDED
+
+* Click "Create new input"
+* Select "DMARC imap OAuth2"
+* Configure:
+   * Name: e.g. dmarc-google
+   * Interval: how often to poll the mailserver for aggregate reports.
+   * Index: what Splunk index to send the aggregate reports to
+   * Global Account: select the account to authenticate with
+   * IMAP server: the imap server to poll
+   * IMAP mailbox: the mailbox to poll.  Name format may vary by service, probably the SMTP address will work
+   * IMAP folder: the specific mailbox folder to poll. Default: INBOX
+   * OAuth2 authority:  refer to your service's documentation.
+   * OAuth2 scope: refer to your service's documentation.
+   * Resolve IP: Whether or not to resolve the row source_ip in the DMARC XML aggregate reports
+   * Validate XML: Whether or not to validate the DMARC XML against the DMARC XSD
+   * Validate DKIM: Whether or not to validate the DKIM signature(s) in the mail
+   * Output format: Send events to Splunk in JSON format (default) or key=value (left for compatibility reasons)
+
+*Sample OAuth2 Settings*  (subject to change)
+
+|Service | Authority| Scope |
+|----------- | ----------- |-----------|
+|Office 365 | https://login.microsoftonline.com/<TENANT_ID> | https://outlook.office365.com/.default |
+|Google | |
 
 
 TA-dmarc can fetch DMARC aggregate reports from an IMAP or POP3 server.  It will look for:
