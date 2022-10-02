@@ -388,6 +388,7 @@ This add-on is maintained by Jorrit Folmer. These people and organisations have 
 - Diogo Silva (diogofgm)
 - George Luong
 - Georgi Georgiev
+- hkelley
 - John (john-9c54a80b)
 - Martin Wright
 - Mike Kolk

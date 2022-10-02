@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.1.0
+
+- Added OAuth2 support for IMAP. (Thanks to hkelley for contributing code for this feature!)
+
 ## 4.0.0
 
 - Recreated from scratch using Splunk Add-on Builder v4.1.1 to address various Splunk Cloud requirements
