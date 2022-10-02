@@ -42,4 +42,5 @@ coverage.xml
 # Splunk:
 local/
 local.meta
-
+*.so
+*.exe
