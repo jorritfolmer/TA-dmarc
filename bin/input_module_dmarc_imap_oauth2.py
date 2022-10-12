@@ -66,7 +66,7 @@ def collect_events(helper, ew):
     opt_global_account = helper.get_arg('global_account')
     opt_imap_username  = helper.get_arg('imap_username')
     opt_oauth2_authority = helper.get_arg('oauth2_authority')
-    opt_oauth2_scope   = helper.get_arg('oauth2_authority')
+    opt_oauth2_scope   = helper.get_arg('oauth2_scope')
     opt_imap_mailbox   = helper.get_arg("imap_mailbox")
     opt_resolve_ip     = helper.get_arg('resolve_ip')
     opt_validate_xml   = helper.get_arg('validate_xml')
