@@ -133,15 +133,29 @@ class Imap2Dir(object):
                         authority = self.opt_oauth2_authority
                     )
 
-                result = None
-                
-                result = app.acquire_token_for_client(self.opt_oauth2_scope)
+                self.helper.log_debug(
+                        'get_dmarc_messages: acquiring token for client %s to access scope %s' %
+                        (self.opt_global_account["username"],self.opt_oauth2_scope))               
 
+                result = app.acquire_token_for_client(self.opt_oauth2_scope)
+                        
                 if "access_token" in result:
                     self.server.oauth2_login(
                         self.opt_imap_username,
                         result['access_token'])
+                    self.helper.log_debug(
+                        'get_dmarc_messages: successful login to %s using acquired token' %
+                        (self.opt_imap_username))
+                else:
+                    self.helper.log_error(
+                        'get_dmarc_messages: No access token found for client ID: %s  -  result %s' %
+                        (self.opt_global_account["username"],result))
+                    
             ###
+            
+            self.helper.log_debug(
+                'get_dmarc_messages: will open folder %s in %s' %
+                (self.opt_imap_mailbox,self.opt_imap_username))
 
             info = self.server.select_folder(self.opt_imap_mailbox)
             self.helper.log_info(
