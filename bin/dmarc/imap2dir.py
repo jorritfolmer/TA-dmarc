@@ -4,6 +4,7 @@ from builtins import object
 import os
 import ssl
 import email
+import re
 from imapclient import IMAPClient
 import dkim
 import dns
@@ -181,6 +182,8 @@ class Imap2Dir(object):
     def write_part_to_file(self, uid, part):
         """ Write the selected message part to file """
         filename = part.get_filename()
+        # Sanitize filename, see issue #43
+        filename = re.sub('[^\w\d!.-]', '', filename)
         filename = os.path.join(self.tmp_dir, os.path.basename(filename))
         try:
             open(filename, 'wb').write(part.get_payload(decode=True))
