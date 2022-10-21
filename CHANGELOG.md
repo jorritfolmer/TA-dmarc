@@ -2,7 +2,8 @@
 
 ## 4.1.0
 
-- Added OAuth2 support for IMAP. (Thanks to hkelley for contributing code for this feature!)
+- Added OAuth2 support for Microsoft Office365 IMAP. (Thanks to hkelley for contributing code for this feature!)
+- Fixed an exception when encountering illegal characters in xml attachment filenames. (Thanks to hkelley for reporting this issue)
 
 ## 4.0.0
 

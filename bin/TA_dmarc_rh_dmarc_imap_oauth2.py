@@ -44,7 +44,7 @@ fields = [
         'imap_server',
         required=True,
         encrypted=False,
-        default=None,
+        default='outlook.office365.com',
         validator=validator.String(
             min_len=0, 
             max_len=8192, 
@@ -74,7 +74,7 @@ fields = [
         'oauth2_scope',
         required=True,
         encrypted=False,
-        default=None,
+        default='https://outlook.office365.com/.default',
         validator=validator.String(
             min_len=0, 
             max_len=8192, 

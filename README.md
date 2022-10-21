@@ -13,17 +13,9 @@ an IMAP/POP3 mailbox or local directory with mitigations against:
 
 | Splunk version | Linux | Windows
 |----------------|-------|---------
-| 6.3            | Yes   | Yes
-| 6.4            | Yes   | Yes
-| 6.5            | Yes   | Yes
-| 6.6            | Yes   | Yes
-| 7.0            | Yes   | Yes
-| 7.1            | Yes   | Yes
-| 7.2            | Yes   | Yes
-| 7.3            | Yes   | Yes
-| 8.0            | Yes   | Yes
-| 8.1            | Yes   | Likely. Untested.
-| 8.2            | Yes   | Likely. Untested.
+| 8.1            | Yes   | Yes
+| 8.2            | Yes   | Yes
+| 9.0            | Yes   | Likely, untested
 
 Additional requirements:
 
@@ -31,6 +23,10 @@ Additional requirements:
 * KVstore: used to keep track of which IMAP messages or local files have already been processed. KVstore is enabled by default on Splunk instances.
 
 ## Upgrading from previous versions
+
+### From 3.x to 4.x
+
+- Upgrade Splunk to at least 8.1.x or higher. Earlier Splunk versions are not suppported starting version 4.0 of the TA-dmarc add-on.
 
 ### From 2.x to 3.x
 

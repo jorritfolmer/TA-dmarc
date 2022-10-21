@@ -59,11 +59,11 @@ class ModInputdmarc_imap_oauth2(modinput_wrapper.base_modinput.BaseModInput):
                                          required_on_create=True,
                                          required_on_edit=False))
         scheme.add_argument(smi.Argument("oauth2_authority", title="OAuth2 authority",
-                                         description="For O365 this will resemble https://login.microsoftonline.com/{yourtenantid}/v2.0",
+                                         description="For O365 this should be https://login.microsoftonline.com/<tenant_id>",
                                          required_on_create=True,
                                          required_on_edit=False))
         scheme.add_argument(smi.Argument("oauth2_scope", title="OAuth2 scope",
-                                         description="For O365 this should most likely be https://outlook.office365.com/.default",
+                                         description="For O365 this should be https://outlook.office365.com/.default",
                                          required_on_create=True,
                                          required_on_edit=False))
         scheme.add_argument(smi.Argument("resolve_ip", title="Resolve IP",
