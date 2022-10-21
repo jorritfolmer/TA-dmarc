@@ -2,7 +2,7 @@
     "meta": {
         "name": "TA-dmarc",
         "displayName": "TA-dmarc add-on for Splunk",
-        "version": "4.0.0",
+        "version": "4.1.0",
         "restRoot": "TA_dmarc",
         "schemaVersion": "0.0.3"
     },
@@ -203,6 +203,14 @@
                         "label": "IMAP server"
                     },
                     {
+                        "field": "imap_mailbox",
+                        "label": "IMAP mailbox"
+                    },
+                    {
+                        "field": "batch_size",
+                        "label": "Batch size"
+                    },
+                    {
                         "field": "imap_username",
                         "label": "IMAP username"
                     },
@@ -213,14 +221,6 @@
                     {
                         "field": "oauth2_scope",
                         "label": "OAuth2 scope"
-                    },
-                    {
-                        "field": "imap_mailbox",
-                        "label": "IMAP mailbox"
-                    },
-                    {
-                        "field": "batch_size",
-                        "label": "Batch size"
                     }
                 ],
                 "actions": [
@@ -489,8 +489,8 @@
                     ]
                 },
                 {
-                    "name": "dmarc_imap_oauth2",
-                    "title": "DMARC imap (oauth2)",
+                    "name": "dmarc_imap",
+                    "title": "DMARC imap",
                     "entity": [
                         {
                             "field": "name",
@@ -549,7 +549,7 @@
                         {
                             "field": "global_account",
                             "label": "Global Account",
-                            "help": "",
+                            "help": "Use the account configured in the setup tab",
                             "required": true,
                             "type": "singleSelect",
                             "options": {
@@ -560,51 +560,6 @@
                             "field": "imap_server",
                             "label": "IMAP server",
                             "help": "Connect to the specified IMAP server with TLS (port 993)",
-                            "required": true,
-                            "type": "text",
-                            "validators": [
-                                {
-                                    "type": "string",
-                                    "minLength": 0,
-                                    "maxLength": 8192,
-                                    "errorMsg": "Max length of text input is 8192"
-                                }
-                            ]
-                        },
-                        {
-                            "field": "imap_username",
-                            "label": "IMAP username",
-                            "help": "The username as identified by their mail address, e.g. test@contoso.onmicrosoft.com",
-                            "required": true,
-                            "type": "text",
-                            "validators": [
-                                {
-                                    "type": "string",
-                                    "minLength": 0,
-                                    "maxLength": 8192,
-                                    "errorMsg": "Max length of text input is 8192"
-                                }
-                            ]
-                        },
-                        {
-                            "field": "oauth2_authority",
-                            "label": "OAuth2 authority",
-                            "help": "For O365 this will resemble https://login.microsoftonline.com/{yourtenantid}/v2.0",
-                            "required": true,
-                            "type": "text",
-                            "validators": [
-                                {
-                                    "type": "string",
-                                    "minLength": 0,
-                                    "maxLength": 8192,
-                                    "errorMsg": "Max length of text input is 8192"
-                                }
-                            ]
-                        },
-                        {
-                            "field": "oauth2_scope",
-                            "label": "OAuth2 scope",
-                            "help": "For O365 this should most likely be https://outlook.office365.com/.default",
                             "required": true,
                             "type": "text",
                             "validators": [
@@ -695,8 +650,8 @@
                     ]
                 },
                 {
-                    "name": "dmarc_imap",
-                    "title": "DMARC imap",
+                    "name": "dmarc_imap_oauth2",
+                    "title": "DMARC imap (oauth2)",
                     "entity": [
                         {
                             "field": "name",
@@ -755,7 +710,7 @@
                         {
                             "field": "global_account",
                             "label": "Global Account",
-                            "help": "Use the account configured in the setup tab",
+                            "help": "",
                             "required": true,
                             "type": "singleSelect",
                             "options": {
@@ -768,6 +723,53 @@
                             "help": "Connect to the specified IMAP server with TLS (port 993)",
                             "required": true,
                             "type": "text",
+                            "defaultValue": "outlook.office365.com",
+                            "validators": [
+                                {
+                                    "type": "string",
+                                    "minLength": 0,
+                                    "maxLength": 8192,
+                                    "errorMsg": "Max length of text input is 8192"
+                                }
+                            ]
+                        },
+                        {
+                            "field": "imap_username",
+                            "label": "IMAP username",
+                            "help": "The username as identified by their mail address, e.g. test@contoso.onmicrosoft.com",
+                            "required": true,
+                            "type": "text",
+                            "validators": [
+                                {
+                                    "type": "string",
+                                    "minLength": 0,
+                                    "maxLength": 8192,
+                                    "errorMsg": "Max length of text input is 8192"
+                                }
+                            ]
+                        },
+                        {
+                            "field": "oauth2_authority",
+                            "label": "OAuth2 authority",
+                            "help": "For O365 this should be https://login.microsoftonline.com/<tenant_id>",
+                            "required": true,
+                            "type": "text",
+                            "validators": [
+                                {
+                                    "type": "string",
+                                    "minLength": 0,
+                                    "maxLength": 8192,
+                                    "errorMsg": "Max length of text input is 8192"
+                                }
+                            ]
+                        },
+                        {
+                            "field": "oauth2_scope",
+                            "label": "OAuth2 scope",
+                            "help": "For O365 this should be https://outlook.office365.com/.default",
+                            "required": true,
+                            "type": "text",
+                            "defaultValue": "https://outlook.office365.com/.default",
                             "validators": [
                                 {
                                     "type": "string",
