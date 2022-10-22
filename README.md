@@ -358,6 +358,27 @@ We use the following guidelines for developing this add-on:
 
 ## Troubleshooting
 
+### Happy path reference log
+
+TA-dmarc logs its operations in index=_internal host=ta:dmarc:log. The following log represents the happy path for a successful IMAP connection and processing of XML files. You can use it to compare against your logs. This is helpful because it allows you to see what should happen and what actually happens or doesn't happen.
+
+```
+2022-10-07 10:36:31,925 INFO pid=5052 tid=MainThread file=base_modinput.py:log_info:295 | Start processing imap server [imap.gmail.com](http://imap.gmail.com/) with use_ssl True
+2022-10-07 10:36:34,700 INFO pid=5052 tid=MainThread file=base_modinput.py:log_info:295 | get_dmarc_messages: 648 messages in folder INBOX
+2022-10-07 10:36:35,010 INFO pid=5052 tid=MainThread file=base_modinput.py:log_info:295 | get_dmarc_messages: 629 messages in folder INBOX match subject "Report domain:"
+2022-10-07 10:36:35,011 INFO pid=5052 tid=MainThread file=splunk_rest_client.py:_request_handler:99 | Use HTTP connection pooling
+2022-10-07 10:36:59,661 INFO pid=5052 tid=MainThread file=base_modinput.py:log_info:295 | Start processing 629 new messages of 629 on [imap.gmail.com](http://imap.gmail.com/)
+2022-10-07 10:36:59,661 INFO pid=5052 tid=MainThread file=base_modinput.py:log_info:295 | get_dmarc_message_bodies: getting messages 0 to 100
+2022-10-07 10:37:17,951 INFO pid=5052 tid=MainThread file=base_modinput.py:log_info:295 | get_dmarc_message_bodies: getting messages 100 to 200
+2022-10-07 10:37:39,604 INFO pid=5052 tid=MainThread file=base_modinput.py:log_info:295 | get_dmarc_message_bodies: getting messages 200 to 300
+2022-10-07 10:37:58,173 INFO pid=5052 tid=MainThread file=base_modinput.py:log_info:295 | get_dmarc_message_bodies: getting messages 300 to 400
+2022-10-07 10:38:17,020 INFO pid=5052 tid=MainThread file=base_modinput.py:log_info:295 | get_dmarc_message_bodies: getting messages 400 to 500
+2022-10-07 10:38:35,651 INFO pid=5052 tid=MainThread file=base_modinput.py:log_info:295 | get_dmarc_message_bodies: getting messages 500 to 600
+2022-10-07 10:38:51,629 INFO pid=5052 tid=MainThread file=base_modinput.py:log_info:295 | get_dmarc_message_bodies: getting messages 600 to 629
+2022-10-07 10:39:25,538 INFO pid=5052 tid=MainThread file=base_modinput.py:log_info:295 | Ended processing 629 new messages with 629 attachments
+2022-10-07 10:39:25,539 INFO pid=5052 tid=MainThread file=base_modinput.py:log_info:295 | Ended processing imap server [imap.gmail.com](http://imap.gmail.com/)
+```
+
 ### Argument validation for scheme=dmarc_imap: script running failed (killed by signal 9: Killed).
 
 You'll get this error message when Splunk kills the script after 30 seconds of waiting for a successful return. This typically happens when:

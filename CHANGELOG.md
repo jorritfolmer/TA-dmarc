@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.1.1
+
+- Fixed 2 blocking Splunk App Inspect findings for cloud vetting.
+
 ## 4.1.0
 
 - Added OAuth2 support for Microsoft Office365 IMAP. (Thanks to hkelley for contributing code for this feature!)
