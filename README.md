@@ -366,6 +366,23 @@ You'll get this error message when Splunk kills the script after 30 seconds of w
 1. the IMAP server is too slow or the batch-size is too high to return successfullly within 30 seconds
 1. you're running on Splunk Cloud and haven't yet asked Support to enable outbound IMAPS connections over port 993/tcp
 
+### The add-on doesn't appear to do anything after authentication
+
+This happens when the IMAP mailbox contains a large number of messages and the interval is too short. For example: polling a mailbox with 250.000 messages every hour will likely result in the add-on spending its time waiting for the IMAP server to return all messages matching the "Report domain" subject.
+
+Google Mail allows you to "move" incoming messages to a new label, solving this particular issue:
+
+1. Sign in to GMail. Click the gear icon on the top right to view the Settings. Then, select "See All Settings" in the sidebar that appears.
+2. Go to the "Filters and Blocked Addresses" tab in the Settings and select "Create a New Filter."
+3. In the box that appears, you'll set up the criteria for the emails you want to label. You can enter one or more conditions in the fields such as From, Subject, Has the Words, or Size. Click "Create Filter".
+4. Next, you'll create the action to label the emails. Check the box for Apply the Label and choose the label in the drop-down box.
+If you want to create a label, pick "New Label", give the label a name, and optionally nest it within an existing label. This automatically creates a folder for the label at the same time.
+5. You can apply other actions if you like, such as Skip the inbox, Mark as Read or Star It. Click "Create Filter"
+6. Once the filter is created, all future emails that match the criteria will receive the label. You can see these are not in your inbox but in the label's folder. Re-configure the Splunk data ingestion to the specific Folder/Label.
+7. Display the sidebar on the left and expand Mail if necessary. Then, select the label's folder and you'll see all emails have moved to this spot as well, giving you quick and easy access to them.
+8. If you need to edit a filter you create, return to Settings > Filters and Blocked Addresses, click "Edit" next to the filter, and make your changes.
+
+
 ## Internal notes
 
 ```
@@ -390,10 +407,11 @@ This add-on is maintained by Jorrit Folmer. These people and organisations have 
 - Mike Kolk
 - Oli (gryphius)
 - Rishabh (infosecfreek)
+- Rajashekar S and the GWS team
 - Samuel Haper (sharperer)
 - Steve Myers (stmyers)
 - Steven Hilton (malvidin)
-- [SMTware](https://www.smtware.com/en/services)
+- [SMTware](https://www.smtware.com/)
 
 ## Third party software credits
 
