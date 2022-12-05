@@ -131,8 +131,8 @@ SCREENSHOT_NEEDED
    * Index: what Splunk index to send the aggregate reports to
    * Global Account: select the account to authenticate with
    * IMAP server: the imap server to poll
-   * IMAP mailbox: the mailbox to poll.  Name format may vary by service, probably the SMTP address will work
-   * IMAP folder: the specific mailbox folder to poll. Default: INBOX
+   * IMAP username: the mailbox to poll.  Name format may vary by service, probably the SMTP address will work
+   * IMAP mailbox: the name of the folder to poll. Default: INBOX
    * OAuth2 authority:  refer to your service's documentation.
    * OAuth2 scope: refer to your service's documentation.
    * Resolve IP: Whether or not to resolve the row source_ip in the DMARC XML aggregate reports
